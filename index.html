@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Senhas Seguro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 14px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #e8f5e8;
+            color: #2d7d32;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 0px;
+        }
+
+        .login-form,
+        .main-app {
+            display: none;
+        }
+
+        .login-form.active,
+        .main-app.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 5px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 5px;
+        }
+
+        .search-input {
+            padding-right: 45px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+        }
+
+        .search-input:focus {
+            background: white;
+            border-color: #667eea;
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-search:hover {
+            background: #5a6268;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .password-list {
+            margin-top: 30px;
+        }
+
+        .password-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .password-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .password-header {
+            display: flex;
+            margin-bottom: 10px;
+            flex-direction: column-reverse;
+        }
+
+        .password-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .password-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: flex-start;
+        }
+
+        .password-field {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .password-field strong {
+            min-width: 80px;
+            color: #666;
+        }
+
+        .password-value {
+            flex: 1;
+            padding: 5px 10px;
+            background: white;
+            border-radius: 5px;
+            font-family: monospace;
+            margin-left: 10px;
+        }
+
+        .copy-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .export-import {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .hidden-password {
+            filter: blur(5px);
+            user-select: none;
+        }
+
+        .show-password {
+            filter: none;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            color: #333;
+            margin: 0;
+        }
+
+        .close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 13px;
+            }
+
+            .password-actions {
+                flex-direction: row;
+            }
+
+            .password-field {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .password-value {
+                margin-left: 0;
+                margin-top: 5px;
+                width: 100%;
+            }
+
+            .buni {
+                margin-top: 8px;
+                padding: 7px;
+                width: 100%;
+            }
+
+            .export-import {
+                width: 100%;
+                margin-top: 30px;
+                padding: 20px;
+                background: #f8f9fa;
+                border-radius: 10px;
+            }
+
+            .btnMC {
+                display: flex;
+                color: red;
+            }
+
+            .buni1 {
+                width: 100%;
+                margin-bottom: 7px;
+            }
+
+            .logout-btn {
+                position: absolute;
+                top: 0px;
+                right: 2px;
+                background: #dc3545;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 21px;
+                cursor: pointer;
+            }
+
+            .ruee {
+                margin-top: 5px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Gerenciador de Senhas</h1>
+            <div class="security-badge">
+                🛡️ Criptografia AES-256 | Dados Locais Seguros
+            </div>
+        </div>
+
+        <!-- Tela de Login -->
+        <div class="login-form active" id="loginForm">
+            <div class="form-group">
+                <label for="masterPassword">Senha Mestra:</label>
+                <input type="password" id="masterPassword" placeholder="Digite sua senha mestra para acessar">
+            </div>
+            <button class="btn" onclick="login()">Entrar</button>
+            <button class="btn btn-secondary" onclick="showCreateMaster()">Criar Nova Senha Mestra</button>
+
+            <div id="createMasterForm" style="display: none; margin-top: 20px;">
+                <div class="form-group">
+                    <label for="newMasterPassword">Nova Senha Mestra:</label>
+                    <input type="password" id="newMasterPassword" placeholder="Mínimo 8 caracteres">
+                </div>
+                <button class="btn btn-success" onclick="createMasterPassword()">Criar</button>
+            </div>
+        </div>
+
+        <!-- Aplicação Principal -->
+        <div class="main-app" id="mainApp">
+            <button class="logout-btn" onclick="logout()">Sair</button>
+
+            <div id="alerts"></div>
+
+            <!-- Formulário para adicionar senha -->
+            <div class="form-group">
+                <label for="siteName">Nome do Site/Serviço:</label>
+                <input type="text" id="siteName" placeholder="Ex: Gmail, Facebook, Banco">
+            </div>
+
+            <div class="form-group">
+                <label for="email">E-mail/Usuário:</label>
+                <input type="text" id="email" placeholder="seu@email.com ou usuário">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Senha:</label>
+                <input type="password" id="password" placeholder="Digite a senha">
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Observações (opcional):</label>
+                <input type="text" id="notes" placeholder="Notas adicionais">
+            </div>
+
+            <button class="btn buni" onclick="addPassword()">Adicionar Senha</button>
+            <button class="btn buni btn-secondary" onclick="generatePassword()">Gerar Senha Segura</button>
+
+            <!-- Campo de pesquisa -->
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input"
+                    placeholder="🔍 Pesquisar por nome do site/serviço..." oninput="searchPasswords()">
+                <button class="clear-search" id="clearSearchBtn" onclick="clearSearch()">×</button>
+            </div>
+
+            <!-- Lista de senhas -->
+            <div class="password-list" id="passwordList"></div>
+
+            <!-- Exportar/Importar -->
+            <div class="export-import">
+                <h3 style="text-align: center;">Backup e Restauração</h3>
+                <button class="buni1 btn btn-secondary" onclick="exportData()">Exportar Dados</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData()">
+                <button class="buni1 btn btn-secondary" onclick="document.getElementById('importFile').click()">Importar
+                    Dados</button>
+                <button class="buni1 btn btn-danger" onclick="clearAllData()">Limpar Todos os Dados</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Editar Senha</h3>
+                <button class="close" onclick="closeEditModal()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label for="editSiteName">Nome do Site/Serviço:</label>
+                <input type="text" id="editSiteName">
+            </div>
+
+            <div class="form-group">
+                <label for="editEmail">E-mail/Usuário:</label>
+                <input type="text" id="editEmail">
+            </div>
+
+            <div class="form-group">
+                <label for="editPassword">Senha:</label>
+                <input type="password" id="editPassword">
+            </div>
+
+            <div class="form-group">
+                <label for="editNotes">Observações:</label>
+                <input type="text" id="editNotes">
+            </div>
+            <button class="ruee btn btn-success" onclick="saveEdit()">Salvar Alterações</button>
+            <button class="ruee btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        let masterKey = null;
+        let passwords = [];
+        let editingId = null;
+        let filteredPasswords = [];
+
+        // Função para normalizar texto (remover acentos e converter para minúsculas)
+        function normalizeText(text) {
+            return text
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        // Função de pesquisa em tempo real
+        function searchPasswords() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const clearBtn = document.getElementById('clearSearchBtn');
+
+            // Mostrar/ocultar botão X
+            if (searchTerm.trim()) {
+                clearBtn.style.display = 'flex';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+
+            if (!searchTerm.trim()) {
+                filteredPasswords = [...passwords];
+            } else {
+                const normalizedSearch = normalizeText(searchTerm);
+                filteredPasswords = passwords.filter(item => {
+                    const siteName = decrypt(item.siteName);
+                    return normalizeText(siteName).includes(normalizedSearch);
+                });
+            }
+
+            displayPasswords();
+        }
+
+        // Função para limpar pesquisa
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            filteredPasswords = [...passwords];
+            displayPasswords();
+        }
+
+        // Função para mostrar alertas
+        function showAlert(message, type = 'success') {
+            const alertsDiv = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertsDiv.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Função para mostrar formulário de criar senha mestra
+        function showCreateMaster() {
+            document.getElementById('createMasterForm').style.display = 'block';
+        }
+
+        // Função para criar senha mestra
+        function createMasterPassword() {
+            const newPassword = document.getElementById('newMasterPassword').value;
+
+            if (newPassword.length < 8) {
+                showAlert('A senha mestra deve ter pelo menos 8 caracteres!', 'danger');
+                return;
+            }
+
+            // Salva hash da senha mestra
+            const masterHash = CryptoJS.SHA256(newPassword).toString();
+            localStorage.setItem('masterHash', masterHash);
+
+            showAlert('Senha mestra criada com sucesso!', 'success');
+            document.getElementById('createMasterForm').style.display = 'none';
+            document.getElementById('newMasterPassword').value = '';
+        }
+
+        // Função de login
+        function login() {
+            const password = document.getElementById('masterPassword').value;
+            const storedHash = localStorage.getItem('masterHash');
+
+            if (!storedHash) {
+                showAlert('Nenhuma senha mestra encontrada. Crie uma nova.', 'danger');
+                return;
+            }
+
+            const inputHash = CryptoJS.SHA256(password).toString();
+
+            if (inputHash !== storedHash) {
+                showAlert('Senha mestra incorreta!', 'danger');
+                return;
+            }
+
+            masterKey = password;
+            document.getElementById('loginForm').classList.remove('active');
+            document.getElementById('mainApp').classList.add('active');
+            loadPasswords();
+        }
+
+        // Função de logout
+        function logout() {
+            masterKey = null;
+            passwords = [];
+            filteredPasswords = [];
+            document.getElementById('mainApp').classList.remove('active');
+            document.getElementById('loginForm').classList.add('active');
+            document.getElementById('masterPassword').value = '';
+            clearForm();
+            clearSearch();
+        }
+
+        // Função para criptografar dados
+        function encrypt(text) {
+            return CryptoJS.AES.encrypt(text, masterKey).toString();
+        }
+
+        // Função para descriptografar dados
+        function decrypt(encryptedText) {
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedText, masterKey);
+                return bytes.toString(CryptoJS.enc.Utf8);
+            } catch (e) {
+                return '';
+            }
+        }
+
+        // Função para gerar senha segura
+        function generatePassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            for (let i = 0; i < 16; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('password').value = password;
+        }
+
+        // Função para adicionar senha
+        function addPassword() {
+            const siteName = document.getElementById('siteName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const notes = document.getElementById('notes').value;
+
+            if (!siteName || !email || !password) {
+                showAlert('Preencha todos os campos obrigatórios!', 'danger');
+                return;
+            }
+
+            const passwordData = {
+                id: Date.now(),
+                siteName: encrypt(siteName),
+                email: encrypt(email),
+                password: encrypt(password),
+                notes: encrypt(notes),
+                created: new Date().toISOString()
+            };
+
+            passwords.push(passwordData);
+            savePasswords();
+            searchPasswords(); // Atualiza a lista filtrada
+            clearForm();
+            showAlert('Senha adicionada com sucesso!');
+        }
+
+        // Função para limpar formulário
+        function clearForm() {
+            document.getElementById('siteName').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('notes').value = '';
+        }
+
+        // Função para salvar senhas
+        function savePasswords() {
+            localStorage.setItem('encryptedPasswords', JSON.stringify(passwords));
+        }
+
+        // Função para carregar senhas
+        function loadPasswords() {
+            const stored = localStorage.getItem('encryptedPasswords');
+            if (stored) {
+                passwords = JSON.parse(stored);
+                filteredPasswords = [...passwords];
+                displayPasswords();
+            }
+        }
+
+        // Função para abrir modal de edição
+        function editPassword(id) {
+            const item = passwords.find(p => p.id === id);
+            if (!item) return;
+
+            editingId = id;
+            document.getElementById('editSiteName').value = decrypt(item.siteName);
+            document.getElementById('editEmail').value = decrypt(item.email);
+            document.getElementById('editPassword').value = decrypt(item.password);
+            document.getElementById('editNotes').value = decrypt(item.notes);
+
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        // Função para fechar modal de edição
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingId = null;
+        }
+
+        // Função para salvar edição
+        function saveEdit() {
+            if (!editingId) return;
+
+            const siteName = document.getElementById('editSiteName').value;
+            const email = document.getElementById('editEmail').value;
+            const password = document.getElementById('editPassword').value;
+            const notes = document.getElementById('editNotes').value;
+
+            if (!siteName || !email || !password) {
+                showAlert('Preencha todos os campos obrigatórios!', 'danger');
+                return;
+            }
+
+            const itemIndex = passwords.findIndex(p => p.id === editingId);
+            if (itemIndex !== -1) {
+                passwords[itemIndex].siteName = encrypt(siteName);
+                passwords[itemIndex].email = encrypt(email);
+                passwords[itemIndex].password = encrypt(password);
+                passwords[itemIndex].notes = encrypt(notes);
+
+                savePasswords();
+                searchPasswords(); // Atualiza a lista filtrada
+                closeEditModal();
+                showAlert('Senha editada com sucesso!');
+            }
+        }
+
+        // Função para exibir senhas
+        function displayPasswords() {
+            const list = document.getElementById('passwordList');
+            const passwordsToShow = filteredPasswords.length > 0 || document.getElementById('searchInput').value.trim() ? filteredPasswords : passwords;
+
+            if (passwordsToShow.length === 0) {
+                if (document.getElementById('searchInput').value.trim()) {
+                    list.innerHTML = '<h3>Suas Senhas Salvas</h3><div class="no-results">Nenhuma senha encontrada para esta pesquisa.</div>';
+                } else {
+                    list.innerHTML = '<h3>Suas Senhas Salvas</h3><div class="no-results">Nenhuma senha salva ainda.</div>';
+                }
+                return;
+            }
+
+            list.innerHTML = '<h3>Suas Senhas Salvas</h3>';
+
+            passwordsToShow.forEach(item => {
+                const siteName = decrypt(item.siteName);
+                const email = decrypt(item.email);
+                const password = decrypt(item.password);
+                const notes = decrypt(item.notes);
+
+                if (!siteName) return; // Falha na descriptografia
+
+                const div = document.createElement('div');
+                div.className = 'password-item';
+                div.innerHTML = `
+                    <div class="password-header">
+                        <div class="password-title">${siteName}</div>
+                        <div class="password-actions">
+                            <button class="btn btn-warning" onclick="editPassword(${item.id})" style="padding: 5px 10px; font-size: 12px;">Editar</button>
+                            <button class="btn btn-danger" onclick="deletePassword(${item.id})" style="padding: 5px 10px; font-size: 12px;">Excluir</button>
+                        </div>
+                    </div>
+                    <div class="password-field">
+                        <strong>Email/Usuário:</strong>
+                        <div class="password-value">${email}</div>
+                        <button class="copy-btn" onclick="copyToClipboard('${email}')">Copiar</button>
+                    </div>
+                    <div class="password-field">
+                        <strong>Senha:</strong>
+                        <div class="password-value hidden-password" id="pass-${item.id}">${password}</div>
+                        <div class="btnMC">
+                        <button class="copy-btn" onclick="togglePassword(${item.id})">Mostrar</button>
+                        <button class="copy-btn" onclick="copyToClipboard('${password}')">Copiar</button>
+                        </div>
+                    </div>
+                    ${notes ? `<div class="password-field"><strong>Notas:</strong><div class="password-value">${notes}</div></div>` : ''}
+                    <small style="color: #666;">Criado em: ${new Date(item.created).toLocaleDateString('pt-BR')}</small>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // Função para alternar visibilidade da senha
+        function togglePassword(id) {
+            const element = document.getElementById(`pass-${id}`);
+            element.classList.toggle('hidden-password');
+            element.classList.toggle('show-password');
+        }
+
+        // Função para copiar para clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showAlert('Copiado para a área de transferência!');
+            });
+        }
+
+        // Função para deletar senha
+        function deletePassword(id) {
+            if (confirm('Tem certeza que deseja excluir esta senha?')) {
+                passwords = passwords.filter(p => p.id !== id);
+                savePasswords();
+                searchPasswords(); // Atualiza a lista filtrada
+                showAlert('Senha excluída com sucesso!');
+            }
+        }
+
+        // Função para exportar dados
+        function exportData() {
+            const data = {
+                passwords: passwords,
+                exported: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `senhas-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showAlert('Backup exportado com sucesso!');
+        }
+
+        // Função para importar dados
+        function importData() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.passwords && Array.isArray(data.passwords)) {
+                        passwords = data.passwords;
+                        savePasswords();
+                        searchPasswords(); // Atualiza a lista filtrada
+                        showAlert('Dados importados com sucesso!');
+                    } else {
+                        showAlert('Arquivo de backup inválido!', 'danger');
+                    }
+                } catch (error) {
+                    showAlert('Erro ao importar arquivo!', 'danger');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Função para limpar todos os dados
+        function clearAllData() {
+            if (confirm('ATENÇÃO: Isso irá excluir TODAS as suas senhas e dados! Tem certeza?')) {
+                if (confirm('Esta ação é IRREVERSÍVEL! Confirma novamente?')) {
+                    localStorage.clear();
+                    passwords = [];
+                    filteredPasswords = [];
+                    showAlert('Todos os dados foram limpos!');
+                    logout();
+                }
+            }
+        }
+
+        // Fechar modal ao clicar fora dele
+        window.onclick = function (event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        };
+
+        // Verificar se existe senha mestra ao carregar
+        window.onload = function () {
+            const storedHash = localStorage.getItem('masterHash');
+            if (!storedHash) {
+                showCreateMaster();
+            }
+        };
+    </script>
+</body>
+
+</html>
