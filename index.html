@@ -685,6 +685,58 @@
             return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
         
+        
+        // Função de pesquisa em tempo real
+        // Função de pesquisa em tempo real (ATUALIZADA)
+        // Função de pesquisa em tempo real (EXPANDIDA PARA NOME E NOTAS)
+        // Substitua sua função searchPasswords() atual por esta versão corrigida:
+
+function searchPasswords() {
+    const searchTerm = document.getElementById('searchInput').value;
+    const clearBtn = document.getElementById('clearSearchBtn');
+
+    // Mostrar/ocultar botão X
+    if (searchTerm.trim()) {
+        clearBtn.style.display = 'flex';
+    } else {
+        clearBtn.style.display = 'none';
+    }
+
+    if (!searchTerm.trim()) {
+        filteredPasswords = [...passwords];
+    } else {
+        // Usar a lógica de pesquisa avançada
+        filteredPasswords = passwords.filter(item => {
+            return advancedSearchLogic(searchTerm, item);
+        });
+    }
+
+    // Resetar para primeira página ao pesquisar
+    currentPage = 1;
+    displayPasswords();
+}
+
+// Função auxiliar com a lógica de pesquisa avançada
+function advancedSearchLogic(searchTerm, item) {
+    if (!searchTerm.trim()) return true;
+    
+    // Descriptografar campos
+    const siteName = decrypt(item.siteName) || '';
+    const email = decrypt(item.email) || '';
+    const notes = decrypt(item.notes) || '';
+    
+    // Dividir termos de pesquisa por espaço
+    const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+    
+    // Campos onde pesquisar (incluindo email se desejar)
+    const searchableContent = normalizeText(`${siteName} ${notes}`);
+    
+    // Verificar se todos os termos estão presentes
+    return searchTerms.every(term => 
+        searchableContent.includes(normalizeText(term))
+    );
+}
+
         // Função para pesquisa avançada com múltiplos termos
         function advancedSearch(searchTerm, item) {
             if (!searchTerm.trim()) return true;
@@ -704,44 +756,6 @@
             return searchTerms.every(term =>
                 searchableContent.includes(normalizeText(term))
             );
-        }
-        // Função de pesquisa em tempo real
-        // Função de pesquisa em tempo real (ATUALIZADA)
-        // Função de pesquisa em tempo real (EXPANDIDA PARA NOME E NOTAS)
-        function searchPasswords() {
-            const searchTerm = document.getElementById('searchInput').value;
-            const clearBtn = document.getElementById('clearSearchBtn');
-
-            // Mostrar/ocultar botão X
-            if (searchTerm.trim()) {
-                clearBtn.style.display = 'flex';
-            } else {
-                clearBtn.style.display = 'none';
-            }
-
-            if (!searchTerm.trim()) {
-                filteredPasswords = [...passwords];
-            } else {
-                const normalizedSearch = normalizeText(searchTerm);
-                filteredPasswords = passwords.filter(item => {
-                    // Descriptografar campos para pesquisa
-                    const siteName = decrypt(item.siteName);
-                    const notes = decrypt(item.notes);
-
-                    // Buscar no nome do site
-                    const siteNameMatch = normalizeText(siteName).includes(normalizedSearch);
-
-                    // Buscar nas notas (se existirem)
-                    const notesMatch = notes && normalizeText(notes).includes(normalizedSearch);
-
-                    // Retornar true se encontrar em qualquer um dos campos
-                    return siteNameMatch || notesMatch;
-                });
-            }
-
-            // Resetar para primeira página ao pesquisar
-            currentPage = 1;
-            displayPasswords();
         }
 
         // Função para limpar pesquisa
@@ -1061,6 +1075,33 @@
                 showAlert('Senha editada com sucesso!');
             }
         }
+        // Função para destacar múltiplos termos
+function highlightMultipleTerms(text, searchTerm) {
+    if (!searchTerm.trim() || !text) return text;
+    
+    // Dividir termos de pesquisa por espaço
+    const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+    
+    let highlightedText = text;
+    
+    // Destacar cada termo encontrado
+    searchTerms.forEach(term => {
+        const regex = new RegExp(`(${escapeRegex(term)})`, 'gi');
+        highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
+    });
+    
+    return highlightedText;
+}
+
+// Função para verificar se algum termo foi encontrado no texto
+function hasAnyTermMatch(text, searchTerm) {
+    if (!searchTerm.trim() || !text) return false;
+    
+    const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+    const normalizedText = normalizeText(text);
+    
+    return searchTerms.some(term => normalizedText.includes(normalizeText(term)));
+}
 
         // Função para exibir senhas
         // Função para exibir senhas (ATUALIZADA COM PAGINAÇÃO)
@@ -1105,28 +1146,25 @@
                 if (!siteName) return; // Falha na descriptografia
 
                 // Verificar se tem pesquisa ativa para destacar resultados
-                const searchTerm = document.getElementById('searchInput').value.trim();
-                const hasActiveSearch = searchTerm.length > 0;
+                // Verificar se tem pesquisa ativa para destacar resultados
+const searchTerm = document.getElementById('searchInput').value.trim();
+const hasActiveSearch = searchTerm.length > 0;
 
-                let highlightedSiteName = siteName;
-                let highlightedNotes = notes;
+let highlightedSiteName = siteName;
+let highlightedNotes = notes;
 
-                // Destacar termos encontrados se houver pesquisa ativa
-                if (hasActiveSearch) {
-                    const normalizedSearch = normalizeText(searchTerm);
+// Destacar termos encontrados se houver pesquisa ativa
+if (hasActiveSearch) {
+    // Destacar no nome do site se algum termo foi encontrado
+    if (hasAnyTermMatch(siteName, searchTerm)) {
+        highlightedSiteName = highlightMultipleTerms(siteName, searchTerm);
+    }
 
-                    // Destacar no nome do site
-                    if (normalizeText(siteName).includes(normalizedSearch)) {
-                        const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
-                        highlightedSiteName = siteName.replace(regex, '<mark>$1</mark>');
-                    }
-
-                    // Destacar nas notas
-                    if (notes && normalizeText(notes).includes(normalizedSearch)) {
-                        const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
-                        highlightedNotes = notes.replace(regex, '<mark>$1</mark>');
-                    }
-                }
+    // Destacar nas notas se algum termo foi encontrado
+    if (notes && hasAnyTermMatch(notes, searchTerm)) {
+        highlightedNotes = highlightMultipleTerms(notes, searchTerm);
+    }
+}
 
                 const div = document.createElement('div');
                 div.className = 'password-item';
