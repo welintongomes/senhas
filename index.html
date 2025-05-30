@@ -20,7 +20,9 @@
             min-height: 100vh;
             padding: 14px;
         }
-
+        h3{
+            text-align: center;
+        }
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -331,6 +333,107 @@
             padding: 20px;
         }
 
+        /* Estilos para paginação */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 10px;
+        }
+
+        .pagination-info {
+            color: #666;
+            font-size: 14px;
+            margin: 0 15px;
+        }
+
+        .pagination-btn {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            color: #495057;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            min-width: 40px;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .items-per-page {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .items-per-page select {
+            padding: 5px 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            background: white;
+        }
+
+        /* Estilos para destacar termos de pesquisa */
+        mark {
+            background: linear-gradient(120deg, #fff200 0%, #ffed4e 100%);
+            color: #333;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(255, 242, 0, 0.3);
+        }
+
+        .search-input:focus {
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Animação suave para resultados */
+        .password-item {
+            transition: all 0.3s ease;
+        }
+
+        .password-item mark {
+            animation: highlight-pulse 2s ease-in-out;
+        }
+
+        @keyframes highlight-pulse {
+            0% {
+                background: linear-gradient(120deg, #fff200 0%, #ffed4e 100%);
+                transform: scale(1);
+            }
+
+            50% {
+                background: linear-gradient(120deg, #ffed4e 0%, #fff200 100%);
+                transform: scale(1.02);
+            }
+
+            100% {
+                background: linear-gradient(120deg, #fff200 0%, #ffed4e 100%);
+                transform: scale(1);
+            }
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 13px;
@@ -390,6 +493,59 @@
             .ruee {
                 margin-top: 5px;
                 width: 100%;
+            }
+
+            .pagination-container {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .pagination-btn {
+                min-width: 35px;
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+
+            .pagination-info {
+                width: 100%;
+                text-align: center;
+                font-size: 12px;
+                margin-top: 10px;
+            }
+
+            .items-per-page {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .items-per-page select {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            /* Melhorias para pesquisa em mobile */
+            .search-container {
+                margin-bottom: 15px;
+            }
+
+            .search-input {
+                font-size: 16px;
+                /* Evita zoom em iOS */
+                padding: 12px 45px 12px 15px;
+            }
+
+            mark {
+                padding: 1px 3px;
+                font-size: 0.9em;
+            }
+
+            .no-results {
+                font-size: 14px;
+                padding: 15px;
+            }
+
+            .no-results strong {
+                color: #667eea;
             }
         }
     </style>
@@ -455,7 +611,7 @@
             <!-- Campo de pesquisa -->
             <div class="search-container">
                 <input type="text" id="searchInput" class="search-input"
-                    placeholder="🔍 Pesquisar por nome do site/serviço..." oninput="searchPasswords()">
+                    placeholder="🔍 Pesquisar por nome do site/serviço ou notas..." oninput="searchPasswords()">
                 <button class="clear-search" id="clearSearchBtn" onclick="clearSearch()">×</button>
             </div>
 
@@ -511,6 +667,10 @@
         let passwords = [];
         let editingId = null;
         let filteredPasswords = [];
+        // Variáveis para controle de paginação
+        let currentPage = 1;
+        const itemsPerPage = 3;
+        let totalPages = 1;
 
         // Função para normalizar texto (remover acentos e converter para minúsculas)
         function normalizeText(text) {
@@ -520,7 +680,34 @@
                 .replace(/[\u0300-\u036f]/g, '');
         }
 
+        // Função para escapar caracteres especiais em regex
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // Função para pesquisa avançada com múltiplos termos
+        function advancedSearch(searchTerm, item) {
+            if (!searchTerm.trim()) return true;
+
+            // Descriptografar campos
+            const siteName = decrypt(item.siteName) || '';
+            const email = decrypt(item.email) || '';
+            const notes = decrypt(item.notes) || '';
+
+            // Dividir termos de pesquisa por espaço
+            const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+
+            // Campos onde pesquisar
+            const searchableContent = normalizeText(`${siteName} ${notes}`);
+
+            // Verificar se todos os termos estão presentes
+            return searchTerms.every(term =>
+                searchableContent.includes(normalizeText(term))
+            );
+        }
         // Função de pesquisa em tempo real
+        // Função de pesquisa em tempo real (ATUALIZADA)
+        // Função de pesquisa em tempo real (EXPANDIDA PARA NOME E NOTAS)
         function searchPasswords() {
             const searchTerm = document.getElementById('searchInput').value;
             const clearBtn = document.getElementById('clearSearchBtn');
@@ -537,22 +724,149 @@
             } else {
                 const normalizedSearch = normalizeText(searchTerm);
                 filteredPasswords = passwords.filter(item => {
+                    // Descriptografar campos para pesquisa
                     const siteName = decrypt(item.siteName);
-                    return normalizeText(siteName).includes(normalizedSearch);
+                    const notes = decrypt(item.notes);
+
+                    // Buscar no nome do site
+                    const siteNameMatch = normalizeText(siteName).includes(normalizedSearch);
+
+                    // Buscar nas notas (se existirem)
+                    const notesMatch = notes && normalizeText(notes).includes(normalizedSearch);
+
+                    // Retornar true se encontrar em qualquer um dos campos
+                    return siteNameMatch || notesMatch;
                 });
             }
 
+            // Resetar para primeira página ao pesquisar
+            currentPage = 1;
             displayPasswords();
         }
 
         // Função para limpar pesquisa
+        // Função para limpar pesquisa (ATUALIZADA)
         function clearSearch() {
             document.getElementById('searchInput').value = '';
             document.getElementById('clearSearchBtn').style.display = 'none';
             filteredPasswords = [...passwords];
+            currentPage = 1; // Resetar para primeira página
+            displayPasswords();
+        }
+        // Função para calcular paginação
+        function calculatePagination() {
+            const passwordsToShow = filteredPasswords.length > 0 || document.getElementById('searchInput').value.trim()
+                ? filteredPasswords
+                : passwords;
+
+            totalPages = Math.ceil(passwordsToShow.length / itemsPerPage);
+
+            // Ajustar página atual se necessário
+            if (currentPage > totalPages && totalPages > 0) {
+                currentPage = totalPages;
+            }
+            if (currentPage < 1) {
+                currentPage = 1;
+            }
+        }
+
+        // Função para obter senhas da página atual
+        function getCurrentPagePasswords() {
+            const passwordsToShow = filteredPasswords.length > 0 || document.getElementById('searchInput').value.trim()
+                ? filteredPasswords
+                : passwords;
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+
+            return passwordsToShow.slice(startIndex, endIndex);
+        }
+
+        // Função para ir para uma página específica
+        function goToPage(page) {
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                displayPasswords();
+            }
+        }
+
+        // Função para alterar itens por página
+        function changeItemsPerPage(newItemsPerPage) {
+            itemsPerPage = parseInt(newItemsPerPage);
+            currentPage = 1; // Resetar para primeira página
             displayPasswords();
         }
 
+        // Função para renderizar controles de paginação
+        function renderPaginationControls() {
+            const passwordsToShow = filteredPasswords.length > 0 || document.getElementById('searchInput').value.trim()
+                ? filteredPasswords
+                : passwords;
+
+            if (passwordsToShow.length <= itemsPerPage) {
+                return ''; // Não mostrar paginação se couber tudo em uma página
+            }
+
+            let paginationHTML = `
+        <div class="items-per-page">
+            <label>Mostrar:</label>
+            <select onchange="changeItemsPerPage(this.value)">
+                <option value="3" ${itemsPerPage === 3 ? 'selected' : ''}>3 por página</option>
+                <option value="5" ${itemsPerPage === 5 ? 'selected' : ''}>5 por página</option>
+                <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10 por página</option>
+                <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20 por página</option>
+            </select>
+        </div>
+        
+        <div class="pagination-container">
+            <button class="pagination-btn" 
+                    onclick="goToPage(1)" 
+                    ${currentPage === 1 ? 'disabled' : ''}>
+                ‹‹
+            </button>
+            
+            <button class="pagination-btn" 
+                    onclick="goToPage(${currentPage - 1})" 
+                    ${currentPage === 1 ? 'disabled' : ''}>
+                ‹
+            </button>
+    `;
+
+            // Mostrar páginas
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+            <button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
+                    onclick="goToPage(${i})">
+                ${i}
+            </button>
+        `;
+            }
+
+            paginationHTML += `
+            <button class="pagination-btn" 
+                    onclick="goToPage(${currentPage + 1})" 
+                    ${currentPage === totalPages ? 'disabled' : ''}>
+                ›
+            </button>
+            
+            <button class="pagination-btn" 
+                    onclick="goToPage(${totalPages})" 
+                    ${currentPage === totalPages ? 'disabled' : ''}>
+                ››
+            </button>
+        </div>
+        
+        <div class="pagination-info">
+            Página ${currentPage} de ${totalPages} 
+            (${passwordsToShow.length} senha${passwordsToShow.length !== 1 ? 's' : ''} total)
+        </div>
+    `;
+
+            return paginationHTML;
+        }
         // Função para mostrar alertas
         function showAlert(message, type = 'success') {
             const alertsDiv = document.getElementById('alerts');
@@ -749,22 +1063,40 @@
         }
 
         // Função para exibir senhas
+        // Função para exibir senhas (ATUALIZADA COM PAGINAÇÃO)
         function displayPasswords() {
+            calculatePagination();
+
             const list = document.getElementById('passwordList');
-            const passwordsToShow = filteredPasswords.length > 0 || document.getElementById('searchInput').value.trim() ? filteredPasswords : passwords;
+            const passwordsToShow = filteredPasswords.length > 0 || document.getElementById('searchInput').value.trim()
+                ? filteredPasswords
+                : passwords;
 
             if (passwordsToShow.length === 0) {
-                if (document.getElementById('searchInput').value.trim()) {
-                    list.innerHTML = '<h3>Suas Senhas Salvas</h3><div class="no-results">Nenhuma senha encontrada para esta pesquisa.</div>';
+                const searchTerm = document.getElementById('searchInput').value.trim();
+                if (searchTerm) {
+                    list.innerHTML = `
+            <h3>Suas Senhas Salvas</h3>
+            <div class="no-results">
+                <p>Nenhuma senha encontrada para: <strong>"${searchTerm}"</strong></p>
+                <p style="font-size: 0.9em; color: #888; margin-top: 10px;">
+                    💡 A pesquisa busca no nome do site/serviço e nas notas
+                </p>
+            </div>
+        `;
                 } else {
                     list.innerHTML = '<h3>Suas Senhas Salvas</h3><div class="no-results">Nenhuma senha salva ainda.</div>';
                 }
                 return;
             }
 
+            // Obter apenas as senhas da página atual
+            const currentPagePasswords = getCurrentPagePasswords();
+
             list.innerHTML = '<h3>Suas Senhas Salvas</h3>';
 
-            passwordsToShow.forEach(item => {
+            // Renderizar senhas da página atual
+            currentPagePasswords.forEach(item => {
                 const siteName = decrypt(item.siteName);
                 const email = decrypt(item.email);
                 const password = decrypt(item.password);
@@ -772,34 +1104,66 @@
 
                 if (!siteName) return; // Falha na descriptografia
 
+                // Verificar se tem pesquisa ativa para destacar resultados
+                const searchTerm = document.getElementById('searchInput').value.trim();
+                const hasActiveSearch = searchTerm.length > 0;
+
+                let highlightedSiteName = siteName;
+                let highlightedNotes = notes;
+
+                // Destacar termos encontrados se houver pesquisa ativa
+                if (hasActiveSearch) {
+                    const normalizedSearch = normalizeText(searchTerm);
+
+                    // Destacar no nome do site
+                    if (normalizeText(siteName).includes(normalizedSearch)) {
+                        const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+                        highlightedSiteName = siteName.replace(regex, '<mark>$1</mark>');
+                    }
+
+                    // Destacar nas notas
+                    if (notes && normalizeText(notes).includes(normalizedSearch)) {
+                        const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+                        highlightedNotes = notes.replace(regex, '<mark>$1</mark>');
+                    }
+                }
+
                 const div = document.createElement('div');
                 div.className = 'password-item';
                 div.innerHTML = `
-                    <div class="password-header">
-                        <div class="password-title">${siteName}</div>
-                        <div class="password-actions">
-                            <button class="btn btn-warning" onclick="editPassword(${item.id})" style="padding: 5px 10px; font-size: 12px;">Editar</button>
-                            <button class="btn btn-danger" onclick="deletePassword(${item.id})" style="padding: 5px 10px; font-size: 12px;">Excluir</button>
-                        </div>
-                    </div>
-                    <div class="password-field">
-                        <strong>Email/Usuário:</strong>
-                        <div class="password-value">${email}</div>
-                        <button class="copy-btn" onclick="copyToClipboard('${email}')">Copiar</button>
-                    </div>
-                    <div class="password-field">
-                        <strong>Senha:</strong>
-                        <div class="password-value hidden-password" id="pass-${item.id}">${password}</div>
-                        <div class="btnMC">
-                        <button class="copy-btn" onclick="togglePassword(${item.id})">Mostrar</button>
-                        <button class="copy-btn" onclick="copyToClipboard('${password}')">Copiar</button>
-                        </div>
-                    </div>
-                    ${notes ? `<div class="password-field"><strong>Notas:</strong><div class="password-value">${notes}</div></div>` : ''}
-                    <small style="color: #666;">Criado em: ${new Date(item.created).toLocaleDateString('pt-BR')}</small>
-                `;
+        <div class="password-header">
+            <div class="password-title">${highlightedSiteName}</div>
+            <div class="password-actions">
+                <button class="btn btn-warning" onclick="editPassword(${item.id})" style="padding: 5px 10px; font-size: 12px;">Editar</button>
+                <button class="btn btn-danger" onclick="deletePassword(${item.id})" style="padding: 5px 10px; font-size: 12px;">Excluir</button>
+            </div>
+        </div>
+        <div class="password-field">
+            <strong>Email/Usuário:</strong>
+            <div class="password-value">${email}</div>
+            <button class="copy-btn" onclick="copyToClipboard('${email}')">Copiar</button>
+        </div>
+        <div class="password-field">
+            <strong>Senha:</strong>
+            <div class="password-value hidden-password" id="pass-${item.id}">${password}</div>
+            <div class="btnMC">
+            <button class="copy-btn" onclick="togglePassword(${item.id})">Mostrar</button>
+            <button class="copy-btn" onclick="copyToClipboard('${password}')">Copiar</button>
+            </div>
+        </div>
+        ${notes ? `<div class="password-field"><strong>Notas:</strong><div class="password-value">${highlightedNotes}</div></div>` : ''}
+        <small style="color: #666;">Criado em: ${new Date(item.created).toLocaleDateString('pt-BR')}</small>
+    `;
                 list.appendChild(div);
             });
+
+            // Adicionar controles de paginação
+            const paginationHTML = renderPaginationControls();
+            if (paginationHTML) {
+                const paginationDiv = document.createElement('div');
+                paginationDiv.innerHTML = paginationHTML;
+                list.appendChild(paginationDiv);
+            }
         }
 
         // Função para alternar visibilidade da senha
@@ -896,6 +1260,14 @@
                 showCreateMaster();
             }
         };
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Evita comportamento padrão
+                login(); // Chama diretamente a função de login
+            }
+        });
+        <script src="script.js"></script>
+    <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
