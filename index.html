@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciador de Senhas Seguro</title>
     <script src="crypto-js.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script> -->
+
 
     <style>
         * {
@@ -36,6 +38,7 @@
         }
 
         .header {
+            margin-top: 11px;
             text-align: center;
             margin-bottom: 30px;
         }
@@ -282,7 +285,28 @@
             padding: 8px 15px;
             border-radius: 5px;
             cursor: pointer;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            transform: none;
+
+            background-color: transparent;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-family: sans-serif;
+            cursor: pointer;
+
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
+
+        .logout-btn:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
 
         .modal {
             display: none;
@@ -476,13 +500,14 @@
             }
 
             .logout-btn {
+                transform: translate(50px, 0px);
                 position: absolute;
-                top: 0px;
-                right: 2px;
+                top: 2px;
+                right: 50%;
                 background: #dc3545;
                 color: white;
                 border: none;
-                padding: 8px 15px;
+                padding: 3px 30px;
                 border-radius: 21px;
                 cursor: pointer;
             }
@@ -659,6 +684,40 @@
                 margin-bottom: 10px;
             }
         }
+
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons .btn {
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-buttons .btn small {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: normal;
+            margin-top: 4px;
+        }
+
+        #importCount,
+        #currentCount {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
     </style>
 </head>
 
@@ -785,6 +844,39 @@
         </div>
     </div>
 
+    <!-- Modal de Importação -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">⚠️ Importar Dados</h3>
+                <button class="close" onclick="closeImportModal()">&times;</button>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <p><strong>Foram encontradas <span id="importCount">0</span> senhas no arquivo.</strong></p>
+                <p>Você já possui <strong><span id="currentCount">0</span> senhas</strong> salvas.</p>
+                <br>
+                <p>O que deseja fazer?</p>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-danger" onclick="confirmImport('replace')">
+                    🔄 Substituir Tudo
+                    <small style="display: block; font-size: 0.8em;">Apaga todas as senhas atuais</small>
+                </button>
+
+                <button class="btn btn-success" onclick="confirmImport('merge')">
+                    📥 Mesclar
+                    <small style="display: block; font-size: 0.8em;">Manter atuais + adicionar novas</small>
+                </button>
+
+                <button class="btn btn-secondary" onclick="closeImportModal()">
+                    ❌ Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let masterKey = null;
         let passwords = [];
@@ -795,6 +887,7 @@
         let itemsPerPage = 3;
         let totalPages = 1;
         let isAddFormVisible = false;
+        let importedData = null; // Armazenar dados temporariamente
 
         // Função para mostrar/ocultar formulário de adicionar senha
         function toggleAddForm() {
@@ -1446,6 +1539,7 @@
         }
 
         // Função para importar dados
+        // Função para importar dados (NOVA VERSÃO)
         function importData() {
             const file = document.getElementById('importFile').files[0];
             if (!file) return;
@@ -1455,18 +1549,112 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     if (data.passwords && Array.isArray(data.passwords)) {
-                        passwords = data.passwords;
-                        savePasswords();
-                        searchPasswords(); // Atualiza a lista filtrada
-                        showAlert('Dados importados com sucesso!');
+                        // Armazenar dados temporariamente
+                        importedData = data.passwords;
+
+                        // Verificar se existe senha mestra válida nos dados importados
+                        let validPasswords = 0;
+                        importedData.forEach(item => {
+                            try {
+                                // Tentar descriptografar um campo para validar
+                                if (decrypt(item.siteName)) {
+                                    validPasswords++;
+                                }
+                            } catch (e) {
+                                // Ignorar senhas que não podem ser descriptografadas
+                            }
+                        });
+
+                        // Se nenhuma senha pode ser descriptografada, mostrar erro
+                        if (validPasswords === 0 && importedData.length > 0) {
+                            showAlert('As senhas no arquivo foram criptografadas com uma senha mestra diferente!', 'danger');
+                            importedData = null;
+                            return;
+                        }
+
+                        // Atualizar contadores no modal
+                        document.getElementById('importCount').textContent = importedData.length;
+                        document.getElementById('currentCount').textContent = passwords.length;
+
+                        // Mostrar modal de confirmação
+                        document.getElementById('importModal').style.display = 'block';
                     } else {
                         showAlert('Arquivo de backup inválido!', 'danger');
                     }
                 } catch (error) {
-                    showAlert('Erro ao importar arquivo!', 'danger');
+                    showAlert('Erro ao importar arquivo! Verifique se o arquivo está correto.', 'danger');
                 }
             };
             reader.readAsText(file);
+
+            // Limpar o input file para permitir reimportar o mesmo arquivo
+            document.getElementById('importFile').value = '';
+        }
+
+        // Função para fechar modal de importação
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+            importedData = null;
+        }
+
+        // Função para confirmar importação
+        function confirmImport(action) {
+            if (!importedData) {
+                showAlert('Erro: dados de importação não encontrados!', 'danger');
+                closeImportModal();
+                return;
+            }
+
+            try {
+                if (action === 'replace') {
+                    // Substituir tudo
+                    passwords = [...importedData];
+                    showAlert(`Todas as senhas foram substituídas! ${passwords.length} senhas importadas.`, 'success');
+                }
+                else if (action === 'merge') {
+                    // Mesclar: adicionar novas senhas
+                    const initialCount = passwords.length;
+                    let addedCount = 0;
+
+                    importedData.forEach(importedItem => {
+                        // Verificar se já existe uma senha igual (mesmo site e email)
+                        const exists = passwords.some(existingItem => {
+                            try {
+                                return decrypt(existingItem.siteName).toLowerCase() === decrypt(importedItem.siteName).toLowerCase() &&
+                                    decrypt(existingItem.email).toLowerCase() === decrypt(importedItem.email).toLowerCase();
+                            } catch (e) {
+                                return false;
+                            }
+                        });
+
+                        if (!exists) {
+                            // Gerar novo ID para evitar conflitos
+                            const newItem = {
+                                ...importedItem,
+                                id: Date.now() + Math.random()
+                            };
+                            passwords.push(newItem);
+                            addedCount++;
+                        }
+                    });
+
+                    if (addedCount > 0) {
+                        showAlert(`Mesclagem concluída! ${addedCount} novas senhas adicionadas. Total: ${passwords.length} senhas.`, 'success');
+                    } else {
+                        showAlert('Nenhuma senha nova foi encontrada para adicionar.', 'info');
+                    }
+                }
+
+                // Salvar e atualizar interface
+                savePasswords();
+                searchPasswords();
+                updateToggleButtonText();
+                closeImportModal();
+
+            } catch (error) {
+                showAlert('Erro ao processar importação!', 'danger');
+                closeImportModal();
+            }
         }
 
         // Função para limpar todos os dados
@@ -1482,11 +1670,17 @@
             }
         }
 
-        // Fechar modal ao clicar fora dele
+        // Fechar modal ao clicar fora dele (VERSÃO ATUALIZADA)
         window.onclick = function (event) {
-            const modal = document.getElementById('editModal');
-            if (event.target === modal) {
+            const editModal = document.getElementById('editModal');
+            const importModal = document.getElementById('importModal');
+
+            if (event.target === editModal) {
                 closeEditModal();
+            }
+
+            if (event.target === importModal) {
+                closeImportModal();
             }
         };
 
