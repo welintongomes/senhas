@@ -20,9 +20,11 @@
             min-height: 100vh;
             padding: 14px;
         }
-        h3{
+
+        h3 {
             text-align: center;
         }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -235,10 +237,12 @@
         }
 
         .export-import {
-            margin-top: 30px;
+            display: flex;
+            margin-top: 0px;
             padding: 20px;
             background: #f8f9fa;
             border-radius: 10px;
+            justify-content: space-evenly;
         }
 
         .hidden-password {
@@ -343,6 +347,7 @@
         }
 
         .pagination-info {
+            text-align: center;
             color: #666;
             font-size: 14px;
             margin: 0 15px;
@@ -460,14 +465,6 @@
                 width: 100%;
             }
 
-            .export-import {
-                width: 100%;
-                margin-top: 30px;
-                padding: 20px;
-                background: #f8f9fa;
-                border-radius: 10px;
-            }
-
             .btnMC {
                 display: flex;
                 color: red;
@@ -547,6 +544,120 @@
             .no-results strong {
                 color: #667eea;
             }
+
+            .export-import {
+                display: flex;
+                margin-top: 0px;
+                padding: 20px;
+                background: #f8f9fa;
+                border-radius: 10px;
+                flex-direction: column;
+            }
+        }
+
+        /* Estilos para o botão de toggle */
+        .add-password-toggle {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .toggle-form-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 24px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 200px;
+            margin: 0 auto;
+        }
+
+        .toggle-form-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-form-btn #toggleIcon {
+            font-size: 18px;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-form-btn.active #toggleIcon {
+            transform: rotate(45deg);
+        }
+
+        /* Estilos para o formulário colapsável */
+        .add-password-form {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            animation: slideDown 0.3s ease-out;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .form-buttons .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* Animação de slide */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .add-password-form.slide-up {
+            animation: slideUp 0.3s ease-in;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .form-buttons {
+                flex-direction: column;
+            }
+
+            .form-buttons .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
@@ -584,30 +695,42 @@
 
             <div id="alerts"></div>
 
-            <!-- Formulário para adicionar senha -->
-            <div class="form-group">
-                <label for="siteName">Nome do Site/Serviço:</label>
-                <input type="text" id="siteName" placeholder="Ex: Gmail, Facebook, Banco">
+            <!-- Botão para mostrar/ocultar formulário -->
+            <div class="add-password-toggle">
+                <button class="btn btn-primary toggle-form-btn" onclick="toggleAddForm()">
+                    <span id="toggleIcon">+</span>
+                    <span id="toggleText">Adicionar Nova Senha</span>
+                </button>
             </div>
 
-            <div class="form-group">
-                <label for="email">E-mail/Usuário:</label>
-                <input type="text" id="email" placeholder="seu@email.com ou usuário">
+            <!-- Formulário para adicionar senha (inicialmente oculto) -->
+            <div class="add-password-form" id="addPasswordForm" style="display: none;">
+                <div class="form-group">
+                    <label for="siteName">Nome do Site/Serviço:</label>
+                    <input type="text" id="siteName" placeholder="Ex: Gmail, Facebook, Banco">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">E-mail/Usuário:</label>
+                    <input type="text" id="email" placeholder="seu@email.com ou usuário">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Senha:</label>
+                    <input type="password" id="password" placeholder="Digite a senha">
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Observações (opcional):</label>
+                    <input type="text" id="notes" placeholder="Notas adicionais">
+                </div>
+
+                <div class="form-buttons">
+                    <button class="btn btn-success" onclick="addPassword()">Adicionar Senha</button>
+                    <button class="btn btn-secondary" onclick="generatePassword()">Gerar Senha Segura</button>
+                    <button class="btn btn-warning" onclick="toggleAddForm()">Cancelar</button>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label for="password">Senha:</label>
-                <input type="password" id="password" placeholder="Digite a senha">
-            </div>
-
-            <div class="form-group">
-                <label for="notes">Observações (opcional):</label>
-                <input type="text" id="notes" placeholder="Notas adicionais">
-            </div>
-
-            <button class="btn buni" onclick="addPassword()">Adicionar Senha</button>
-            <button class="btn buni btn-secondary" onclick="generatePassword()">Gerar Senha Segura</button>
-
             <!-- Campo de pesquisa -->
             <div class="search-container">
                 <input type="text" id="searchInput" class="search-input"
@@ -619,8 +742,8 @@
             <div class="password-list" id="passwordList"></div>
 
             <!-- Exportar/Importar -->
+            <h3 style="text-align: center;">Backup e Restauração</h3>
             <div class="export-import">
-                <h3 style="text-align: center;">Backup e Restauração</h3>
                 <button class="buni1 btn btn-secondary" onclick="exportData()">Exportar Dados</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData()">
                 <button class="buni1 btn btn-secondary" onclick="document.getElementById('importFile').click()">Importar
@@ -671,6 +794,62 @@
         let currentPage = 1;
         let itemsPerPage = 3;
         let totalPages = 1;
+        let isAddFormVisible = false;
+
+        // Função para mostrar/ocultar formulário de adicionar senha
+        function toggleAddForm() {
+            const form = document.getElementById('addPasswordForm');
+            const toggleBtn = document.querySelector('.toggle-form-btn');
+            const toggleIcon = document.getElementById('toggleIcon');
+            const toggleText = document.getElementById('toggleText');
+
+            if (isAddFormVisible) {
+                // Ocultar formulário
+                form.classList.add('slide-up');
+                setTimeout(() => {
+                    form.style.display = 'none';
+                    form.classList.remove('slide-up');
+                }, 300);
+
+                toggleBtn.classList.remove('active');
+                toggleIcon.textContent = '+';
+                toggleText.textContent = 'Adicionar Nova Senha';
+                isAddFormVisible = false;
+
+                // Limpar formulário quando ocultar
+                clearForm();
+            } else {
+                // Mostrar formulário
+                form.style.display = 'block';
+                toggleBtn.classList.add('active');
+                toggleIcon.textContent = '×';
+                toggleText.textContent = 'Fechar Formulário';
+                isAddFormVisible = true;
+
+                // Focar no primeiro campo
+                setTimeout(() => {
+                    document.getElementById('siteName').focus();
+                }, 100);
+            }
+        }
+
+        // Função para atualizar texto do botão com contador
+        function updateToggleButtonText() {
+            const toggleText = document.getElementById('toggleText');
+            const passwordCount = passwords.length;
+
+            if (!isAddFormVisible) {
+                if (passwordCount === 0) {
+                    toggleText.textContent = 'Adicionar Primeira Senha';
+                } else {
+                    toggleText.textContent = `Adicionar Nova Senha (${passwordCount} salvas)`;
+                }
+            }
+        }
+
+        // Chame esta função sempre que a lista de senhas for atualizada
+        // Adicione esta linha no final das funções addPassword(), deletePassword(), e loadPasswords()
+        updateToggleButtonText();
 
         // Função para normalizar texto (remover acentos e converter para minúsculas)
         function normalizeText(text) {
@@ -684,58 +863,58 @@
         function escapeRegex(string) {
             return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
-        
-        
+
+
         // Função de pesquisa em tempo real
         // Função de pesquisa em tempo real (ATUALIZADA)
         // Função de pesquisa em tempo real (EXPANDIDA PARA NOME E NOTAS)
         // Substitua sua função searchPasswords() atual por esta versão corrigida:
 
-function searchPasswords() {
-    const searchTerm = document.getElementById('searchInput').value;
-    const clearBtn = document.getElementById('clearSearchBtn');
+        function searchPasswords() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const clearBtn = document.getElementById('clearSearchBtn');
 
-    // Mostrar/ocultar botão X
-    if (searchTerm.trim()) {
-        clearBtn.style.display = 'flex';
-    } else {
-        clearBtn.style.display = 'none';
-    }
+            // Mostrar/ocultar botão X
+            if (searchTerm.trim()) {
+                clearBtn.style.display = 'flex';
+            } else {
+                clearBtn.style.display = 'none';
+            }
 
-    if (!searchTerm.trim()) {
-        filteredPasswords = [...passwords];
-    } else {
-        // Usar a lógica de pesquisa avançada
-        filteredPasswords = passwords.filter(item => {
-            return advancedSearchLogic(searchTerm, item);
-        });
-    }
+            if (!searchTerm.trim()) {
+                filteredPasswords = [...passwords];
+            } else {
+                // Usar a lógica de pesquisa avançada
+                filteredPasswords = passwords.filter(item => {
+                    return advancedSearchLogic(searchTerm, item);
+                });
+            }
 
-    // Resetar para primeira página ao pesquisar
-    currentPage = 1;
-    displayPasswords();
-}
+            // Resetar para primeira página ao pesquisar
+            currentPage = 1;
+            displayPasswords();
+        }
 
-// Função auxiliar com a lógica de pesquisa avançada
-function advancedSearchLogic(searchTerm, item) {
-    if (!searchTerm.trim()) return true;
-    
-    // Descriptografar campos
-    const siteName = decrypt(item.siteName) || '';
-    const email = decrypt(item.email) || '';
-    const notes = decrypt(item.notes) || '';
-    
-    // Dividir termos de pesquisa por espaço
-    const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
-    
-    // Campos onde pesquisar (incluindo email se desejar)
-    const searchableContent = normalizeText(`${siteName} ${notes}`);
-    
-    // Verificar se todos os termos estão presentes
-    return searchTerms.every(term => 
-        searchableContent.includes(normalizeText(term))
-    );
-}
+        // Função auxiliar com a lógica de pesquisa avançada
+        function advancedSearchLogic(searchTerm, item) {
+            if (!searchTerm.trim()) return true;
+
+            // Descriptografar campos
+            const siteName = decrypt(item.siteName) || '';
+            const email = decrypt(item.email) || '';
+            const notes = decrypt(item.notes) || '';
+
+            // Dividir termos de pesquisa por espaço
+            const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+
+            // Campos onde pesquisar (incluindo email se desejar)
+            const searchableContent = normalizeText(`${siteName} ${notes}`);
+
+            // Verificar se todos os termos estão presentes
+            return searchTerms.every(term =>
+                searchableContent.includes(normalizeText(term))
+            );
+        }
 
         // Função para pesquisa avançada com múltiplos termos
         function advancedSearch(searchTerm, item) {
@@ -941,13 +1120,26 @@ function advancedSearchLogic(searchTerm, item) {
         }
 
         // Função de logout
+        // Função de logout (modificada)
         function logout() {
             masterKey = null;
             passwords = [];
             filteredPasswords = [];
+            isAddFormVisible = false; // Resetar estado do formulário
+
             document.getElementById('mainApp').classList.remove('active');
             document.getElementById('loginForm').classList.add('active');
             document.getElementById('masterPassword').value = '';
+
+            // Garantir que o formulário esteja oculto
+            const form = document.getElementById('addPasswordForm');
+            if (form) {
+                form.style.display = 'none';
+                document.querySelector('.toggle-form-btn').classList.remove('active');
+                document.getElementById('toggleIcon').textContent = '+';
+                document.getElementById('toggleText').textContent = 'Adicionar Nova Senha';
+            }
+
             clearForm();
             clearSearch();
         }
@@ -978,6 +1170,7 @@ function advancedSearchLogic(searchTerm, item) {
         }
 
         // Função para adicionar senha
+        // Função para adicionar senha (modificada)
         function addPassword() {
             const siteName = document.getElementById('siteName').value;
             const email = document.getElementById('email').value;
@@ -1000,9 +1193,13 @@ function advancedSearchLogic(searchTerm, item) {
 
             passwords.push(passwordData);
             savePasswords();
-            searchPasswords(); // Atualiza a lista filtrada
+            searchPasswords();
             clearForm();
             showAlert('Senha adicionada com sucesso!');
+
+            // Fechar formulário após adicionar
+            toggleAddForm();
+            updateToggleButtonText();
         }
 
         // Função para limpar formulário
@@ -1026,6 +1223,7 @@ function advancedSearchLogic(searchTerm, item) {
                 filteredPasswords = [...passwords];
                 displayPasswords();
             }
+            updateToggleButtonText();
         }
 
         // Função para abrir modal de edição
@@ -1076,32 +1274,32 @@ function advancedSearchLogic(searchTerm, item) {
             }
         }
         // Função para destacar múltiplos termos
-function highlightMultipleTerms(text, searchTerm) {
-    if (!searchTerm.trim() || !text) return text;
-    
-    // Dividir termos de pesquisa por espaço
-    const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
-    
-    let highlightedText = text;
-    
-    // Destacar cada termo encontrado
-    searchTerms.forEach(term => {
-        const regex = new RegExp(`(${escapeRegex(term)})`, 'gi');
-        highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
-    });
-    
-    return highlightedText;
-}
+        function highlightMultipleTerms(text, searchTerm) {
+            if (!searchTerm.trim() || !text) return text;
 
-// Função para verificar se algum termo foi encontrado no texto
-function hasAnyTermMatch(text, searchTerm) {
-    if (!searchTerm.trim() || !text) return false;
-    
-    const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
-    const normalizedText = normalizeText(text);
-    
-    return searchTerms.some(term => normalizedText.includes(normalizeText(term)));
-}
+            // Dividir termos de pesquisa por espaço
+            const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+
+            let highlightedText = text;
+
+            // Destacar cada termo encontrado
+            searchTerms.forEach(term => {
+                const regex = new RegExp(`(${escapeRegex(term)})`, 'gi');
+                highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
+            });
+
+            return highlightedText;
+        }
+
+        // Função para verificar se algum termo foi encontrado no texto
+        function hasAnyTermMatch(text, searchTerm) {
+            if (!searchTerm.trim() || !text) return false;
+
+            const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+            const normalizedText = normalizeText(text);
+
+            return searchTerms.some(term => normalizedText.includes(normalizeText(term)));
+        }
 
         // Função para exibir senhas
         // Função para exibir senhas (ATUALIZADA COM PAGINAÇÃO)
@@ -1147,24 +1345,24 @@ function hasAnyTermMatch(text, searchTerm) {
 
                 // Verificar se tem pesquisa ativa para destacar resultados
                 // Verificar se tem pesquisa ativa para destacar resultados
-const searchTerm = document.getElementById('searchInput').value.trim();
-const hasActiveSearch = searchTerm.length > 0;
+                const searchTerm = document.getElementById('searchInput').value.trim();
+                const hasActiveSearch = searchTerm.length > 0;
 
-let highlightedSiteName = siteName;
-let highlightedNotes = notes;
+                let highlightedSiteName = siteName;
+                let highlightedNotes = notes;
 
-// Destacar termos encontrados se houver pesquisa ativa
-if (hasActiveSearch) {
-    // Destacar no nome do site se algum termo foi encontrado
-    if (hasAnyTermMatch(siteName, searchTerm)) {
-        highlightedSiteName = highlightMultipleTerms(siteName, searchTerm);
-    }
+                // Destacar termos encontrados se houver pesquisa ativa
+                if (hasActiveSearch) {
+                    // Destacar no nome do site se algum termo foi encontrado
+                    if (hasAnyTermMatch(siteName, searchTerm)) {
+                        highlightedSiteName = highlightMultipleTerms(siteName, searchTerm);
+                    }
 
-    // Destacar nas notas se algum termo foi encontrado
-    if (notes && hasAnyTermMatch(notes, searchTerm)) {
-        highlightedNotes = highlightMultipleTerms(notes, searchTerm);
-    }
-}
+                    // Destacar nas notas se algum termo foi encontrado
+                    if (notes && hasAnyTermMatch(notes, searchTerm)) {
+                        highlightedNotes = highlightMultipleTerms(notes, searchTerm);
+                    }
+                }
 
                 const div = document.createElement('div');
                 div.className = 'password-item';
@@ -1226,6 +1424,7 @@ if (hasActiveSearch) {
                 searchPasswords(); // Atualiza a lista filtrada
                 showAlert('Senha excluída com sucesso!');
             }
+            updateToggleButtonText();
         }
 
         // Função para exportar dados
