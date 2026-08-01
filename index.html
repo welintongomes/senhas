@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none';">
+<meta name="theme-color" content="#14120F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='11' width='18' height='11' rx='2' fill='%23C9A15E'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4' fill='none' stroke='%23C9A15E' stroke-width='2'/%3E%3C/svg%3E">
+<title>Cofre de Senhas</title>
+<style>
+  :root{
+    --bg:#14120F;
+    --surface:#1E1B17;
+    --surface-2:#262219;
+    --border:#3A342A;
+    --text:#F1EDE4;
+    --text-dim:#ADA290;
+    --brass:#C9A15E;
+    --brass-bright:#E3BE7E;
+    --danger:#C1443A;
+    --success:#6FA287;
+    --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  [hidden]{display:none !important;}
+  h1,h2,h3{font-family:var(--font-serif);font-weight:500;}
+  button{font-family:inherit;}
+
+  /* ---------- Auth screens ---------- */
+  .screen{min-height:100vh;width:100%;}
+  .auth-card{
+    max-width:400px;margin:0 auto;padding:40px 24px;
+    min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;
+  }
+  .dial-wrap{color:var(--brass);margin-bottom:8px;}
+  .dial-svg{display:block;animation:dial-settle .7s ease-out;}
+  @keyframes dial-settle{from{transform:rotate(-30deg);opacity:0;}to{transform:rotate(0deg);opacity:1;}}
+  @media (prefers-reduced-motion:reduce){.dial-svg{animation:none;}}
+  .auth-card h1{font-size:26px;letter-spacing:.3px;margin:6px 0 2px;}
+  .muted{color:var(--text-dim);font-size:14px;line-height:1.55;margin:0 0 18px;}
+  .muted.small{font-size:12.5px;margin:8px 0 0;}
+  .auth-card form,.auth-card .form{width:100%;}
+
+  label{display:block;text-align:left;font-size:13px;color:var(--text-dim);margin:14px 0 6px;}
+  input[type=text],input[type=password],input[type=search],input[type=file],textarea,select{
+    width:100%;padding:11px 12px;background:var(--surface);
+    border:1px solid var(--border);border-radius:10px;
+    color:var(--text);font-size:15px;font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:64px;}
+  input[type=file]{padding:9px;font-size:13px;}
+  .mono{font-family:var(--font-mono);letter-spacing:.4px;}
+  input:focus,textarea:focus,select:focus{
+    outline:none;border-color:var(--brass);
+    box-shadow:0 0 0 3px rgba(201,161,94,0.18);
+  }
+  :focus-visible{outline:2px solid var(--brass);outline-offset:2px;}
+
+  .input-eye{position:relative;width:100%;}
+  .input-eye input{padding-right:44px;}
+  .eye-btn{
+    position:absolute;right:5px;top:50%;transform:translateY(-50%);
+    background:none;border:none;color:var(--text-dim);cursor:pointer;
+    padding:7px;display:flex;border-radius:8px;
+  }
+  .eye-btn:hover{color:var(--brass);background:var(--surface-2);}
+
+  .field-error{color:var(--danger);font-size:13px;margin:10px 0 0;text-align:left;}
+
+  .strength-block{margin-top:4px;}
+  .strength-meter{height:6px;border-radius:4px;background:var(--border);overflow:hidden;margin-top:8px;}
+  .strength-meter .bar{height:100%;width:0;transition:width .25s ease, background .25s ease;background:transparent;}
+  .strength-label{display:block;font-size:12px;color:var(--text-dim);margin-top:5px;min-height:14px;text-align:left;}
+
+  .btn{
+    appearance:none;border:none;border-radius:10px;padding:12px 18px;
+    font-size:15px;font-weight:600;cursor:pointer;width:100%;margin-top:14px;
+    transition:transform .08s ease, filter .15s ease;
+  }
+  .btn:active{transform:scale(0.98);}
+  .btn:disabled{opacity:.55;cursor:not-allowed;}
+  .btn-primary{background:var(--brass);color:#181410;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border);}
+  .btn-secondary:hover{border-color:var(--brass);}
+  .btn-ghost{background:transparent;color:var(--text-dim);border:1px solid transparent;}
+  .btn-ghost:hover{color:var(--text);}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-danger:hover{filter:brightness(1.08);}
+  .btn-small{width:auto;padding:10px 14px;margin-top:0;font-size:13.5px;white-space:nowrap;}
+
+  /* ---------- Main screen ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 18px 8px;max-width:680px;margin:0 auto;
+  }
+  .brand{display:flex;align-items:center;gap:9px;font-family:var(--font-serif);font-size:19px;}
+  .brand .dial-wrap{margin:0;}
+  .topbar-actions{display:flex;gap:4px;}
+  .icon-btn{
+    background:none;border:none;color:var(--text-dim);cursor:pointer;
+    width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  }
+  .icon-btn:hover{background:var(--surface-2);color:var(--brass);}
+  .icon-btn.small{width:32px;height:32px;}
+
+  .search-row{
+    max-width:680px;margin:0 auto;padding:6px 18px 12px;
+    display:flex;gap:10px;align-items:center;
+  }
+  .search-row input{flex:1;}
+  .count-badge{
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);
+    font-size:12px;padding:7px 11px;border-radius:20px;white-space:nowrap;
+  }
+
+  .entry-list{
+    list-style:none;margin:0;padding:0 18px calc(110px + env(safe-area-inset-bottom,0px));
+    max-width:680px;margin-left:auto;margin-right:auto;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .entry-row{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 8px 11px 14px;
+  }
+  .entry-info{min-width:0;flex:1;}
+  .entry-title{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .entry-username{
+    font-size:12.5px;color:var(--text-dim);font-family:var(--font-mono);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;
+  }
+  .entry-actions{display:flex;gap:1px;flex-shrink:0;}
+  .no-results{text-align:center;color:var(--text-dim);padding:40px 0;list-style:none;}
+
+  .empty-state{max-width:520px;margin:64px auto;text-align:center;color:var(--text-dim);padding:0 24px;}
+  .empty-state h2{color:var(--text);font-size:19px;margin-bottom:8px;}
+  .empty-state .dial-wrap{opacity:.5;margin-bottom:16px;}
+
+  .fab{
+    position:fixed;left:20px;bottom:calc(22px + env(safe-area-inset-bottom,0px));
+    width:56px;height:56px;border-radius:50%;background:var(--brass);color:#181410;
+    border:none;font-size:28px;line-height:1;cursor:pointer;
+    box-shadow:0 6px 20px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;
+  }
+  .fab:hover{filter:brightness(1.08);}
+  .fab:active{transform:scale(0.96);}
+
+  /* ---------- Modals ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(10,9,7,0.72);
+    display:flex;align-items:flex-end;justify-content:center;z-index:100;
+  }
+  @media (min-width:640px){.modal-overlay{align-items:center;}}
+  .modal{
+    background:var(--surface);border:1px solid var(--border);width:100%;max-width:480px;
+    max-height:92vh;overflow-y:auto;border-radius:20px 20px 0 0;
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (min-width:640px){.modal{border-radius:18px;}}
+  .modal-small{max-width:400px;}
+  .modal-header{
+    display:flex;align-items:center;justify-content:space-between;padding:18px 20px;
+    border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;
+  }
+  .modal-header h2{margin:0;font-size:19px;}
+  .modal-body{padding:14px 20px 4px;}
+  .modal-body section{margin-bottom:22px;}
+  .modal-body h3{
+    font-size:12.5px;color:var(--brass);text-transform:uppercase;letter-spacing:.07em;
+    margin:0 0 10px;font-family:var(--font-sans);font-weight:700;
+  }
+  .modal-footer{display:flex;gap:10px;padding:16px 20px;border-top:1px solid var(--border);}
+  .modal-footer.wrap{flex-wrap:wrap;}
+  .modal-footer .btn{margin-top:0;}
+
+  .input-row{display:flex;gap:8px;align-items:flex-start;}
+  .input-row .input-eye{flex:1;}
+
+  details.info{margin-top:4px;}
+  details.info summary{cursor:pointer;color:var(--brass);font-size:13.5px;padding:4px 0;}
+  details.info p{color:var(--text-dim);font-size:13px;line-height:1.6;}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));
+    transform:translateX(-50%) translateY(20px);
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    padding:12px 18px;border-radius:12px;font-size:14px;opacity:0;
+    transition:opacity .2s ease, transform .2s ease;z-index:200;max-width:88vw;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .center-note{max-width:400px;margin:0 auto;padding:60px 24px;text-align:center;color:var(--text-dim);}
+  .entry-username{
+    font-size:12.5px;color:var(--text-dim);font-family:var(--font-mono);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;
+  }
+  /* COLE ESTE CÓDIGO AQUI: Estilos para o novo link clicável */
+  .entry-link {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--brass);
+    text-decoration: none;
+    margin-top: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    transition: color 0.2s ease;
+  }
+  .entry-link:hover {
+    text-decoration: underline;
+    color: var(--brass-bright);
+  }
+  /* ---------- Chips de Categoria ---------- */
+  .category-chips {
+    max-width: 680px; margin: 0 auto; padding: 0 18px 12px;
+    display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  }
+  .category-chips::-webkit-scrollbar { display: none; }
+  .chip {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 6px 14px; border-radius: 16px; font-size: 13px; cursor: pointer;
+    white-space: nowrap; transition: all .2s ease; font-family: inherit;
+  }
+  .chip:hover { border-color: var(--brass); color: var(--text); }
+  .chip.active {
+    background: var(--brass); color: #181410; border-color: var(--brass); font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <div id="screen-loading" class="screen">
+    <div class="center-note"><p class="muted">Carregando cofre…</p></div>
+  </div>
+
+  <div id="screen-error" class="screen" hidden>
+    <div class="center-note">
+      <h2 style="color:var(--text)">Algo não está certo</h2>
+      <p class="muted" id="error-message">Erro desconhecido.</p>
+    </div>
+  </div>
+
+  <div id="screen-setup" class="screen" hidden>
+    <div class="auth-card">
+      <div class="dial-wrap" id="dial-setup"></div>
+      <h1>Cofre de Senhas</h1>
+      <p class="muted">Crie sua senha mestra. Ela nunca é salva em lugar nenhum — só existe na sua cabeça. Se você esquecer, ninguém consegue recuperar seus dados.</p>
+      <div class="form">
+        <label for="setup-pass">Senha mestra</label>
+        <div class="input-eye">
+          <input id="setup-pass" type="password" autocomplete="new-password">
+          <button type="button" class="eye-btn" data-target="setup-pass" aria-label="Mostrar senha"></button>
+        </div>
+        <div class="strength-block">
+          <div class="strength-meter" id="setup-strength"><div class="bar"></div></div>
+          <span class="strength-label"></span>
+        </div>
+        <label for="setup-pass2">Confirmar senha mestra</label>
+        <div class="input-eye">
+          <input id="setup-pass2" type="password" autocomplete="new-password">
+          <button type="button" class="eye-btn" data-target="setup-pass2" aria-label="Mostrar senha"></button>
+        </div>
+        <p class="field-error" id="setup-error" hidden></p>
+        <button id="btn-create-vault" class="btn btn-primary">Criar cofre</button>
+        <button id="btn-goto-restore" class="btn btn-ghost">Já tenho um backup — restaurar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-restore" class="screen" hidden>
+    <div class="auth-card">
+      <h1 style="font-size:22px;">Restaurar backup</h1>
+      <p class="muted">Selecione o arquivo de backup (.json) exportado por este app e digite a senha mestra que foi usada nele.</p>
+      <div class="form">
+        <label for="restore-file">Arquivo de backup</label>
+        <input type="file" id="restore-file" accept="application/json,.json">
+        <label for="restore-pass">Senha mestra do backup</label>
+        <div class="input-eye">
+          <input id="restore-pass" type="password" autocomplete="current-password">
+          <button type="button" class="eye-btn" data-target="restore-pass" aria-label="Mostrar senha"></button>
+        </div>
+        <p class="field-error" id="restore-error" hidden></p>
+        <button id="btn-restore" class="btn btn-primary">Restaurar</button>
+        <button id="btn-back-setup" class="btn btn-ghost">Voltar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-unlock" class="screen" hidden>
+    <div class="auth-card">
+      <div class="dial-wrap" id="dial-unlock"></div>
+      <h1>Cofre de Senhas</h1>
+      <p class="muted" id="unlock-sub">Digite sua senha mestra para abrir o cofre.</p>
+      <div class="form">
+        <div class="input-eye">
+          <input id="unlock-pass" type="password" autocomplete="current-password" aria-label="Senha mestra">
+          <button type="button" class="eye-btn" data-target="unlock-pass" aria-label="Mostrar senha"></button>
+        </div>
+        <p class="field-error" id="unlock-error" hidden></p>
+        <button id="btn-unlock" class="btn btn-primary">Abrir cofre</button>
+        <button id="btn-goto-restore-2" class="btn btn-ghost">Restaurar de um backup</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-main" class="screen" hidden>
+    <header class="topbar">
+      <div class="brand"><span class="dial-wrap" id="dial-brand"></span><span>Cofre</span></div>
+      <div class="topbar-actions">
+        <button id="btn-settings" class="icon-btn" title="Configurações" aria-label="Configurações"></button>
+        <button id="btn-lock" class="icon-btn" title="Bloquear cofre" aria-label="Bloquear cofre"></button>
+      </div>
+    </header>
+    <div class="search-row">
+      <input id="search" type="search" placeholder="Buscar por site, usuário ou URL...">
+      <span id="entry-count" class="count-badge">0</span>
+    </div>
+    <div id="category-chips" class="category-chips"></div>
+    <ul id="entry-list" class="entry-list"></ul>
+    <div id="empty-state" class="empty-state" hidden>
+      <div class="dial-wrap" id="dial-empty"></div>
+      <h2>Seu cofre está vazio</h2>
+      <p class="muted">Toque no botão "+" para guardar sua primeira senha.</p>
+    </div>
+    <button id="btn-add" class="fab" title="Adicionar senha" aria-label="Adicionar senha">+</button>
+  </div>
+
+</div>
+
+<!-- Modal: adicionar/editar senha -->
+<div id="modal-entry" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="entry-modal-title">Nova senha</h2>
+      <button class="icon-btn" id="entry-close" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <label for="f-title">Site / serviço</label>
+      <input id="f-title" type="text" placeholder="ex: Gmail, Instagram, Banco X">
+      <!-- Campo de categoria e datalist -->
+      <label for="f-category">Categoria (opcional)</label>
+      <input id="f-category" type="text" list="cat-list" placeholder="ex: E-mails, Bancos, Redes Sociais">
+      <datalist id="cat-list"></datalist>
+      <label for="f-username">Usuário / e-mail</label>
+      <input id="f-username" type="text" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label for="f-password">Senha</label>
+      <div class="input-row">
+        <div class="input-eye">
+          <input id="f-password" type="password" class="mono" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button type="button" class="eye-btn" data-target="f-password" aria-label="Mostrar senha"></button>
+        </div>
+        <button id="btn-generate" class="btn btn-secondary btn-small" type="button">Gerar</button>
+      </div>
+      <div class="strength-block">
+        <div class="strength-meter" id="entry-strength"><div class="bar"></div></div>
+        <span class="strength-label"></span>
+      </div>
+      <label for="f-url">URL do site (opcional)</label>
+      <input id="f-url" type="text" placeholder="https://...">
+      <label for="f-notes">Notas (opcional)</label>
+      <textarea id="f-notes" rows="3"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-delete-entry" class="btn btn-danger" hidden>Excluir</button>
+      <button id="btn-save-entry" class="btn btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: configurações -->
+<div id="modal-settings" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Configurações</h2>
+      <button class="icon-btn" id="settings-close" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <section>
+        <h3>Backup</h3>
+        <button id="btn-export" class="btn btn-secondary" style="margin-top:0;">Exportar backup criptografado</button>
+        <button id="btn-import" class="btn btn-secondary">Importar backup</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </section>
+      <section>
+        <h3>Segurança</h3>
+        <label for="setting-autolock">Bloquear automaticamente após inatividade</label>
+        <select id="setting-autolock">
+          <option value="1">1 minuto</option>
+          <option value="5">5 minutos</option>
+          <option value="10">10 minutos</option>
+          <option value="15">15 minutos</option>
+          <option value="30">30 minutos</option>
+          <option value="never">Nunca</option>
+        </select>
+        <label for="setting-clipboard">Limpar área de transferência após copiar</label>
+        <select id="setting-clipboard">
+          <option value="10">10 segundos</option>
+          <option value="20">20 segundos</option>
+          <option value="30">30 segundos</option>
+          <option value="60">60 segundos</option>
+          <option value="never">Nunca limpar</option>
+        </select>
+        <button id="btn-change-master" class="btn btn-secondary">Alterar senha mestra</button>
+        <details class="info">
+          <summary>Como isso protege minhas senhas?</summary>
+          <p>Tudo fica só neste dispositivo, nunca é enviado pela internet. Suas senhas são criptografadas com AES-256-GCM usando uma chave derivada da sua senha mestra por PBKDF2-SHA256 com 600.000 repetições. A senha mestra em si nunca é guardada — sem ela, ninguém (nem este app) consegue ler seus dados.</p>
+        </details>
+      </section>
+      <section>
+        <h3>Zona de risco</h3>
+        <button id="btn-wipe" class="btn btn-danger" style="margin-top:0;">Apagar todos os dados deste dispositivo</button>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: senha do arquivo importado -->
+<div id="modal-import" class="modal-overlay" hidden>
+  <div class="modal modal-small">
+    <div class="modal-header">
+      <h2>Importar backup</h2>
+      <button class="icon-btn" id="import-modal-close" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="muted" style="margin-bottom:6px;">Digite a senha mestra que foi usada para criar esse arquivo de backup.</p>
+      <div class="input-eye">
+        <input id="import-pass" type="password">
+        <button type="button" class="eye-btn" data-target="import-pass" aria-label="Mostrar senha"></button>
+      </div>
+      <p class="field-error" id="import-error" hidden></p>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-import-cancel" class="btn btn-ghost">Cancelar</button>
+      <button id="btn-import-continue" class="btn btn-primary">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: modo de importação -->
+<div id="modal-import-mode" class="modal-overlay" hidden>
+  <div class="modal modal-small">
+    <div class="modal-header"><h2>Como importar?</h2></div>
+    <div class="modal-body">
+      <p class="muted">O backup contém <strong id="import-count">0</strong> senha(s) salva(s).</p>
+      <p class="muted small">Mesclar mantém suas senhas atuais e adiciona/atualiza com as do backup. Substituir apaga as senhas atuais e usa somente as do backup.</p>
+    </div>
+    <div class="modal-footer wrap">
+      <button id="btn-import-cancel2" class="btn btn-ghost btn-small">Cancelar</button>
+      <button id="btn-import-merge" class="btn btn-secondary btn-small">Mesclar</button>
+      <button id="btn-import-replace" class="btn btn-danger btn-small">Substituir tudo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: alterar senha mestra -->
+<div id="modal-change-pass" class="modal-overlay" hidden>
+  <div class="modal modal-small">
+    <div class="modal-header">
+      <h2>Alterar senha mestra</h2>
+      <button class="icon-btn" id="change-pass-close" aria-label="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <label for="cp-current">Senha mestra atual</label>
+      <div class="input-eye">
+        <input id="cp-current" type="password" autocomplete="current-password">
+        <button type="button" class="eye-btn" data-target="cp-current" aria-label="Mostrar senha"></button>
+      </div>
+      <label for="cp-new">Nova senha mestra</label>
+      <div class="input-eye">
+        <input id="cp-new" type="password" autocomplete="new-password">
+        <button type="button" class="eye-btn" data-target="cp-new" aria-label="Mostrar senha"></button>
+      </div>
+      <div class="strength-block">
+        <div class="strength-meter" id="cp-strength"><div class="bar"></div></div>
+        <span class="strength-label"></span>
+      </div>
+      <label for="cp-confirm">Confirmar nova senha</label>
+      <div class="input-eye">
+        <input id="cp-confirm" type="password" autocomplete="new-password">
+        <button type="button" class="eye-btn" data-target="cp-confirm" aria-label="Mostrar senha"></button>
+      </div>
+      <p class="field-error" id="cp-error" hidden></p>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-cp-cancel" class="btn btn-ghost">Cancelar</button>
+      <button id="btn-cp-save" class="btn btn-primary">Alterar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirmação genérica -->
+<div id="modal-confirm" class="modal-overlay" hidden>
+  <div class="modal modal-small">
+    <div class="modal-body" style="padding-top:20px;">
+      <p id="confirm-message" style="color:var(--text);line-height:1.6;"></p>
+    </div>
+    <div class="modal-footer">
+      <button id="confirm-cancel" class="btn btn-ghost">Cancelar</button>
+      <button id="confirm-ok" class="btn btn-danger">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ================= Constantes =================
+  var DB_NAME = 'cofreSenhasDB';
+  var DB_VERSION = 1;
+  var STORE_NAME = 'vault';
+  var RECORD_ID = 'main';
+  var ITERATIONS = 600000;
+  var DEFAULT_SETTINGS = { autoLock: 5, clipboardClear: 20 };
+
+  var LOWER = 'abcdefghijklmnopqrstuvwxyz';
+  var UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var DIGITS = '0123456789';
+  var SYMBOLS = '!@#$%^&*()-_=+[]{};:,.<>?/~';
+
+  var ICONS = {
+    eye: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    eyeoff: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.6 21.6 0 0 1 5.06-6.06M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>',
+    copy: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    star: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    starFilled: '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+  };
+
+  // ================= Estado =================
+  var db = null;
+  var dbRecord = null;
+  var sessionKey = null;
+  var vault = null;
+  var editingEntryId = null;
+  var lastActivity = Date.now();
+  var failedUnlockAttempts = 0;
+  var clipboardClearTimer = null;
+  var toastTimer = null;
+  var confirmResolve = null;
+  var pendingImport = null;
+  
+  // === NOVO: Variável e Funções de Categoria ===
+  // Busca da memória do navegador, se não tiver nada salvo, usa o padrão
+  var currentCategory = localStorage.getItem('cofre_categoria') || 'all';
+  var filterFavorites = localStorage.getItem('cofre_favoritos') === 'true';
+
+  function getUniqueCategories(){
+    var cats = [];
+    if(!vault || !vault.entries) return cats;
+    vault.entries.forEach(function(e){
+      if(e.category && cats.indexOf(e.category) === -1) cats.push(e.category);
+    });
+    return cats.sort(); // Organiza em ordem alfabética
+  }
+
+  function updateCategoryDatalist(){
+    var list = $('cat-list');
+    if(!list) return;
+    list.innerHTML = '';
+    getUniqueCategories().forEach(function(cat){
+      var opt = document.createElement('option');
+      opt.value = cat;
+      list.appendChild(opt);
+    });
+  }
+
+function renderCategoryChips(){
+    var container = $('category-chips');
+    if(!container) return;
+    container.innerHTML = '';
+    var cats = getUniqueCategories();
+    
+    container.style.display = 'flex';
+    
+    // 1. Chip de Favoritos (Filtro independente Liga/Desliga)
+    var btnFav = document.createElement('button');
+    btnFav.className = 'chip' + (filterFavorites ? ' active' : '');
+    btnFav.textContent = '★ Favoritos';
+    btnFav.onclick = function(){ 
+      filterFavorites = !filterFavorites; // Liga/Desliga
+      localStorage.setItem('cofre_favoritos', filterFavorites); // Salva na memória
+      render(); 
+    };
+    container.appendChild(btnFav);
+
+    // 2. Chip "Todas" as categorias
+    var btnAll = document.createElement('button');
+    btnAll.className = 'chip' + (currentCategory === 'all' ? ' active' : '');
+    btnAll.textContent = 'Todas';
+    btnAll.onclick = function(){ 
+      currentCategory = 'all'; 
+      localStorage.setItem('cofre_categoria', 'all'); // Salva na memória
+      render(); 
+    };
+    container.appendChild(btnAll);
+    
+    // 3. Chips das outras categorias
+    cats.forEach(function(cat){
+      var btn = document.createElement('button');
+      btn.className = 'chip' + (currentCategory === cat ? ' active' : '');
+      btn.textContent = cat;
+      btn.onclick = function(){ 
+        currentCategory = cat; 
+        localStorage.setItem('cofre_categoria', cat); // Salva na memória
+        render(); 
+      };
+      container.appendChild(btn);
+    });
+  }
+
+  // ================= Helpers de DOM =================
+  function $(id){ return document.getElementById(id); }
+  function qsa(sel, root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+
+  function showScreen(name){
+    qsa('.screen').forEach(function(s){ s.hidden = true; });
+    var el = $('screen-' + name);
+    if(el) el.hidden = false;
+  }
+
+  function showError(id, msg){
+    var el = $(id);
+    el.textContent = msg;
+    el.hidden = false;
+  }
+  function hideError(id){
+    var el = $(id);
+    el.hidden = true;
+    el.textContent = '';
+  }
+
+  function showToast(msg){
+    var t = $('toast');
+    t.textContent = msg;
+    t.hidden = false;
+    requestAnimationFrame(function(){ t.classList.add('show'); });
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){
+      t.classList.remove('show');
+      setTimeout(function(){ t.hidden = true; }, 220);
+    }, 2400);
+  }
+
+  function showFatalError(msg){
+    $('error-message').textContent = msg;
+    showScreen('error');
+  }
+
+  function genericConfirm(message){
+    return new Promise(function(resolve){
+      $('confirm-message').textContent = message;
+      $('modal-confirm').hidden = false;
+      confirmResolve = resolve;
+    });
+  }
+
+  // ================= IndexedDB =================
+  function openDatabase(){
+    return new Promise(function(resolve, reject){
+      if(!('indexedDB' in window)){
+        reject(new Error('IndexedDB não é suportado neste navegador.'));
+        return;
+      }
+      var req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function(e){
+        var database = e.target.result;
+        if(!database.objectStoreNames.contains(STORE_NAME)){
+          database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = function(){ resolve(req.result); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+  function idbGetRecord(database){
+    return new Promise(function(resolve, reject){
+      var tx = database.transaction(STORE_NAME, 'readonly');
+      var store = tx.objectStore(STORE_NAME);
+      var req = store.get(RECORD_ID);
+      req.onsuccess = function(){ resolve(req.result || null); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+  function idbPutRecord(database, record){
+    return new Promise(function(resolve, reject){
+      var tx = database.transaction(STORE_NAME, 'readwrite');
+      var store = tx.objectStore(STORE_NAME);
+      var req = store.put(record);
+      req.onsuccess = function(){ resolve(); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+  function idbDeleteRecord(database){
+    return new Promise(function(resolve, reject){
+      var tx = database.transaction(STORE_NAME, 'readwrite');
+      var store = tx.objectStore(STORE_NAME);
+      var req = store.delete(RECORD_ID);
+      req.onsuccess = function(){ resolve(); };
+      req.onerror = function(){ reject(req.error); };
+    });
+  }
+
+  // ================= Criptografia =================
+  function bufToB64(buf){
+    var bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    var binary = '';
+    for(var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }
+  function b64ToBuf(b64){
+    var binary = atob(b64);
+    var bytes = new Uint8Array(binary.length);
+    for(var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+  function deriveKey(password, saltBytes, iterations){
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey('raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey'])
+      .then(function(baseKey){
+        return crypto.subtle.deriveKey(
+          { name: 'PBKDF2', salt: saltBytes, iterations: iterations, hash: 'SHA-256' },
+          baseKey,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['encrypt', 'decrypt']
+        );
+      });
+  }
+  function encryptJSON(key, obj){
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var enc = new TextEncoder();
+    var data = enc.encode(JSON.stringify(obj));
+    return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, data).then(function(cipherBuf){
+      return { iv: bufToB64(iv), cipher: bufToB64(cipherBuf) };
+    });
+  }
+  function decryptJSON(key, ivB64, cipherB64){
+    var iv = b64ToBuf(ivB64);
+    var cipherBytes = b64ToBuf(cipherB64);
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, cipherBytes).then(function(plainBuf){
+      var dec = new TextDecoder();
+      return JSON.parse(dec.decode(plainBuf));
+    });
+  }
+  function uid(){
+    if(crypto.randomUUID) return crypto.randomUUID();
+    var bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    var hex = [];
+    for(var i = 0; i < bytes.length; i++) hex.push(bytes[i].toString(16).padStart(2, '0'));
+    var h = hex.join('');
+    return h.slice(0,8) + '-' + h.slice(8,12) + '-' + h.slice(12,16) + '-' + h.slice(16,20) + '-' + h.slice(20);
+  }
+
+  // ================= Força de senha =================
+  function estimateStrength(pwd){
+    if(!pwd) return 0;
+    var score = 0;
+    if(pwd.length >= 8) score++;
+    if(pwd.length >= 12) score++;
+    if(pwd.length >= 16) score++;
+    var classes = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(function(r){ return r.test(pwd); }).length;
+    score += Math.max(0, classes - 1);
+    return Math.min(score, 5);
+  }
+  function updateStrengthMeterFor(pwd, meterId){
+    var meter = $(meterId);
+    var bar = meter.querySelector('.bar');
+    var label = meter.parentElement.querySelector('.strength-label');
+    var score = estimateStrength(pwd);
+    var pct = [0, 20, 40, 60, 80, 100][score];
+    var colors = ['transparent', '#C1443A', '#C1443A', '#d6a94a', '#C9A15E', '#6FA287'];
+    var labels = ['', 'Muito fraca', 'Fraca', 'Razoável', 'Forte', 'Muito forte'];
+    bar.style.width = pct + '%';
+    bar.style.background = colors[score];
+    if(label) label.textContent = pwd ? labels[score] : '';
+  }
+
+  // ================= Gerador de senha =================
+  function generatePassword(opts){
+    opts = opts || {};
+    var length = opts.length || 18;
+    var pools = [];
+    if(opts.lower !== false) pools.push(LOWER);
+    if(opts.upper !== false) pools.push(UPPER);
+    if(opts.digits !== false) pools.push(DIGITS);
+    if(opts.symbols !== false) pools.push(SYMBOLS);
+    if(pools.length === 0) pools = [LOWER];
+    var all = pools.join('');
+    var randVals = crypto.getRandomValues(new Uint32Array(length));
+    var chars = [];
+    for(var i = 0; i < length; i++) chars.push(all[randVals[i] % all.length]);
+    for(var p = 0; p < pools.length; p++){
+      var pool = pools[p];
+      var hasOne = chars.some(function(c){ return pool.indexOf(c) !== -1; });
+      if(!hasOne){
+        var pos = crypto.getRandomValues(new Uint32Array(1))[0] % length;
+        var ch = pool[crypto.getRandomValues(new Uint32Array(1))[0] % pool.length];
+        chars[pos] = ch;
+      }
+    }
+    return chars.join('');
+  }
+
+  // ================= Área de transferência =================
+  function copyToClipboard(text, toastMsg){
+    if(!text){ showToast('Nada para copiar.'); return; }
+    function fallback(){
+      try{
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.setAttribute('readonly', '');
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      }catch(e){ return false; }
+    }
+    var p;
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      p = navigator.clipboard.writeText(text).then(function(){ return true; }).catch(function(){ return fallback(); });
+    } else {
+      p = Promise.resolve(fallback());
+    }
+    p.then(function(ok){
+      if(ok){
+        showToast(toastMsg);
+        scheduleClipboardClear();
+      } else {
+        showToast('Não foi possível copiar automaticamente.');
+      }
+    });
+  }
+  function scheduleClipboardClear(){
+    if(!vault || !vault.settings) return;
+    var secs = vault.settings.clipboardClear;
+    if(secs === 'never' || !secs) return;
+    if(clipboardClearTimer) clearTimeout(clipboardClearTimer);
+    clipboardClearTimer = setTimeout(function(){
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText('').catch(function(){});
+      }
+    }, Number(secs) * 1000);
+  }
+
+  // ================= Ícones dinâmicos (dial) =================
+  function buildDialSVG(size, tickCount, withInnerCircle){
+    var cx = size / 2, cy = size / 2;
+    var rOuter = size / 2 - 4;
+    var rTickOuter = rOuter - 2;
+    var rTickInnerMajor = rOuter - 14;
+    var rTickInnerMinor = rOuter - 8;
+    var ticks = '';
+    var majorEvery = Math.max(1, Math.round(tickCount / 8));
+    for(var i = 0; i < tickCount; i++){
+      var angle = (i / tickCount) * Math.PI * 2 - Math.PI / 2;
+      var major = (i % majorEvery) === 0;
+      var rInner = major ? rTickInnerMajor : rTickInnerMinor;
+      var x1 = cx + rInner * Math.cos(angle);
+      var y1 = cy + rInner * Math.sin(angle);
+      var x2 = cx + rTickOuter * Math.cos(angle);
+      var y2 = cy + rTickOuter * Math.sin(angle);
+      ticks += '<line x1="' + x1.toFixed(2) + '" y1="' + y1.toFixed(2) + '" x2="' + x2.toFixed(2) + '" y2="' + y2.toFixed(2) + '" stroke="currentColor" stroke-width="' + (major ? 2 : 1) + '" stroke-linecap="round" opacity="' + (major ? 0.9 : 0.4) + '"/>';
+    }
+    var inner = withInnerCircle ? ('<circle cx="' + cx + '" cy="' + cy + '" r="' + (rOuter - 22) + '" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>') : '';
+    return '<svg class="dial-svg" viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" aria-hidden="true">' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + rOuter + '" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>' +
+      ticks + inner +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="3" fill="currentColor"/></svg>';
+  }
+
+  function setupDecor(){
+    var dialSetup = $('dial-setup'); if(dialSetup) dialSetup.innerHTML = buildDialSVG(88, 32, true);
+    var dialUnlock = $('dial-unlock'); if(dialUnlock) dialUnlock.innerHTML = buildDialSVG(88, 32, true);
+    var dialBrand = $('dial-brand'); if(dialBrand) dialBrand.innerHTML = buildDialSVG(26, 16, false);
+    var dialEmpty = $('dial-empty'); if(dialEmpty) dialEmpty.innerHTML = buildDialSVG(64, 24, true);
+    qsa('.eye-btn').forEach(function(btn){ btn.innerHTML = ICONS.eye; });
+    $('btn-settings').innerHTML = ICONS.gear;
+    $('btn-lock').innerHTML = ICONS.lock;
+  }
+
+  // ================= Renderização da lista =================
+
+function getFilteredSortedEntries(){
+    var term = $('search').value.trim().toLowerCase();
+    var list = vault.entries.slice();
+    
+    // Filtro 1: Corta pela Categoria escolhida
+    if(currentCategory !== 'all'){
+      list = list.filter(function(e){ return e.category === currentCategory; });
+    }
+
+    // Filtro 2: Corta para mostrar apenas Favoritos (se ativado)
+    if(filterFavorites){
+      list = list.filter(function(e){ return e.favorite === true; });
+    }
+
+    // Filtro 3: Barra de Pesquisa de Texto
+    if(term){
+      list = list.filter(function(e){
+        return (e.title || '').toLowerCase().indexOf(term) !== -1 ||
+          (e.username || '').toLowerCase().indexOf(term) !== -1 ||
+          (e.url || '').toLowerCase().indexOf(term) !== -1 ||
+          (e.notes || '').toLowerCase().indexOf(term) !== -1 ||
+          (e.category || '').toLowerCase().indexOf(term) !== -1;
+      });
+    }
+    
+    // Ordenação
+    list.sort(function(a, b){
+      // Se o filtro exclusivo de Favoritos não estiver ativo, joga os favoritos pro topo da lista
+      if(!filterFavorites) {
+        if(a.favorite && !b.favorite) return -1;
+        if(!a.favorite && b.favorite) return 1;
+      }
+      // Em seguida, ordena em ordem alfabética
+      return (a.title || '').localeCompare(b.title || '', 'pt-BR', { sensitivity: 'base' });
+    });
+    
+    return list;
+  }
+  
+  function iconButton(iconName, label){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'icon-btn small';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+    btn.innerHTML = ICONS[iconName];
+    return btn;
+  }
+
+  function buildEntryRow(entry){
+    var li = document.createElement('li');
+    li.className = 'entry-row';
+    li.dataset.id = entry.id;
+
+    var info = document.createElement('div');
+    info.className = 'entry-info';
+    var titleEl = document.createElement('div');
+    titleEl.className = 'entry-title';
+    titleEl.textContent = entry.title || '(sem nome)';
+    var userEl = document.createElement('div');
+    userEl.className = 'entry-username';
+    userEl.textContent = entry.username || '—';
+    info.appendChild(titleEl);
+    info.appendChild(userEl);
+
+    // === NOVO CÓDIGO: Adiciona o link caso a URL exista ===
+    if (entry.url && entry.url.trim() !== '') {
+      var linkEl = document.createElement('a');
+      linkEl.className = 'entry-link';
+      
+      // Garante que o link tenha http/https para não quebrar a navegação
+      var hrefUrl = entry.url.trim();
+      if (!/^https?:\/\//i.test(hrefUrl)) {
+        hrefUrl = 'https://' + hrefUrl;
+      }
+      
+      linkEl.href = hrefUrl;
+      linkEl.target = '_blank'; // Abre em nova aba
+      linkEl.rel = 'noopener noreferrer'; // Segurança extra
+      linkEl.textContent = entry.url; // Exibe o texto original
+      linkEl.title = "Clique para copiar o usuário e acessar o site";
+
+      // Quando clicar no link, copia o usuário antes de abrir a aba
+      linkEl.addEventListener('click', function(e) {
+        if (entry.username) {
+          copyToClipboard(entry.username, 'Usuário copiado! Abrindo site...');
+        }
+      });
+
+      info.appendChild(linkEl);
+    }
+    // ======================================================
+
+    var actions = document.createElement('div');
+    actions.className = 'entry-actions';
+    // ================== Botão de Favoritar ===
+    var favBtn = iconButton(entry.favorite ? 'starFilled' : 'star', entry.favorite ? 'Remover favorito' : 'Favoritar');
+    if(entry.favorite) favBtn.style.color = 'var(--brass)'; // Fica dourado quando favoritado
+    favBtn.addEventListener('click', function(){
+      entry.favorite = !entry.favorite;
+      entry.updatedAt = Date.now();
+      saveVault().then(function(){ 
+        render(); 
+        showToast(entry.favorite ? 'Adicionado aos favoritos' : 'Removido dos favoritos'); 
+      });
+    });
+    actions.appendChild(favBtn);
+    // ==================================================
+    var copyUserBtn = iconButton('copy', 'Copiar usuário / e-mail');
+    copyUserBtn.addEventListener('click', function(){ copyToClipboard(entry.username || '', 'Usuário copiado'); });
+
+    var copyPassBtn = iconButton('copy', 'Copiar senha');
+    copyPassBtn.addEventListener('click', function(){ copyToClipboard(entry.password || '', 'Senha copiada'); });
+
+    var editBtn = iconButton('edit', 'Editar');
+    editBtn.addEventListener('click', function(){ openEntryModal(entry.id); });
+
+    actions.appendChild(copyUserBtn);
+    actions.appendChild(copyPassBtn);
+    actions.appendChild(editBtn);
+
+    li.appendChild(info);
+    li.appendChild(actions);
+    return li;
+  }
+
+  function render(){
+    renderCategoryChips();
+    var list = getFilteredSortedEntries();
+    var ul = $('entry-list');
+    ul.innerHTML = '';
+    $('entry-count').textContent = String(vault.entries.length);
+    $('empty-state').hidden = vault.entries.length !== 0;
+    if(vault.entries.length === 0) return;
+    if(list.length === 0){
+      var li = document.createElement('li');
+      li.className = 'no-results';
+      li.textContent = 'Nenhuma senha encontrada para essa busca.';
+      ul.appendChild(li);
+      return;
+    }
+    list.forEach(function(entry){ ul.appendChild(buildEntryRow(entry)); });
+  }
+
+  // ================= Cofre: salvar =================
+  function saveVault(){
+    vault.updatedAt = Date.now();
+    return encryptJSON(sessionKey, vault).then(function(res){
+      dbRecord.iv = res.iv;
+      dbRecord.cipher = res.cipher;
+      dbRecord.updatedAt = Date.now();
+      return idbPutRecord(db, dbRecord);
+    });
+  }
+
+  // ================= Atividade / auto-bloqueio =================
+  function resetActivity(){ lastActivity = Date.now(); }
+  ['click', 'keydown', 'touchstart'].forEach(function(evt){
+    document.addEventListener(evt, resetActivity, { passive: true });
+  });
+  setInterval(function(){
+    if(sessionKey && vault && vault.settings && vault.settings.autoLock !== 'never'){
+      var mins = Number(vault.settings.autoLock);
+      if(mins > 0 && (Date.now() - lastActivity) > mins * 60000){
+        lock();
+        showToast('Cofre bloqueado por inatividade.');
+      }
+    }
+  }, 15000);
+
+  function lock(){
+    sessionKey = null;
+    vault = null;
+    editingEntryId = null;
+    currentCategory = 'all';
+    qsa('.modal-overlay').forEach(function(o){ o.hidden = true; });
+    if($('search')) $('search').value = '';
+    showScreen('unlock');
+    $('unlock-pass').value = '';
+    resetEye('unlock-pass');
+    setTimeout(function(){ $('unlock-pass').focus(); }, 50);
+  }
+
+  function resetEye(targetId){
+    var btn = document.querySelector('.eye-btn[data-target="' + targetId + '"]');
+    var input = $(targetId);
+    if(input) input.type = 'password';
+    if(btn) btn.innerHTML = ICONS.eye;
+  }
+
+  // ================= Inicialização =================
+  function init(){
+    setupDecor();
+    if(!window.crypto || !window.crypto.subtle){
+      showFatalError('Seu navegador não oferece suporte às funções de criptografia necessárias (Web Crypto API). Abra este arquivo em uma versão atualizada do Chrome, Firefox, Edge ou Safari.');
+      return;
+    }
+    openDatabase().then(function(database){
+      db = database;
+      return idbGetRecord(db);
+    }).then(function(record){
+      dbRecord = record;
+      showScreen(dbRecord ? 'unlock' : 'setup');
+    }).catch(function(err){
+      console.error(err);
+      showFatalError('Não foi possível iniciar o armazenamento local. Verifique se você não está em modo de navegação privada/anônima e tente novamente. (' + (err && err.message ? err.message : 'erro desconhecido') + ')');
+    });
+  }
+
+  // ================= Eventos: configuração inicial =================
+  $('setup-pass').addEventListener('input', function(e){ updateStrengthMeterFor(e.target.value, 'setup-strength'); });
+  $('setup-pass2').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('btn-create-vault').click(); });
+
+  $('btn-create-vault').addEventListener('click', function(){
+    var p1 = $('setup-pass').value;
+    var p2 = $('setup-pass2').value;
+    hideError('setup-error');
+    if(p1.length < 8){ showError('setup-error', 'A senha mestra deve ter pelo menos 8 caracteres. Se possível, use uma frase longa.'); return; }
+    if(p1 !== p2){ showError('setup-error', 'As senhas não coincidem.'); return; }
+    var btn = $('btn-create-vault');
+    btn.disabled = true;
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    deriveKey(p1, salt, ITERATIONS).then(function(key){
+      vault = { version: 1, entries: [], settings: { autoLock: DEFAULT_SETTINGS.autoLock, clipboardClear: DEFAULT_SETTINGS.clipboardClear } };
+      return encryptJSON(key, vault).then(function(res){
+        dbRecord = { id: RECORD_ID, salt: bufToB64(salt), iterations: ITERATIONS, iv: res.iv, cipher: res.cipher, updatedAt: Date.now() };
+        return idbPutRecord(db, dbRecord).then(function(){ return key; });
+      });
+    }).then(function(key){
+      sessionKey = key;
+      $('setup-pass').value = ''; $('setup-pass2').value = '';
+      resetEye('setup-pass'); resetEye('setup-pass2');
+      resetActivity();
+      showScreen('main');
+      render();
+      showToast('Cofre criado! Guarde bem sua senha mestra — ela não pode ser recuperada.');
+    }).catch(function(err){
+      console.error(err);
+      showError('setup-error', 'Erro ao criar o cofre: ' + err.message);
+    }).finally(function(){
+      btn.disabled = false;
+    });
+  });
+
+  $('btn-goto-restore').addEventListener('click', function(){ showScreen('restore'); });
+
+  $('btn-back-setup').addEventListener('click', function(){
+    showScreen(dbRecord ? 'unlock' : 'setup');
+    hideError('restore-error');
+    $('restore-file').value = '';
+    $('restore-pass').value = '';
+    resetEye('restore-pass');
+  });
+
+  // ================= Eventos: restaurar (instalação nova) =================
+  $('btn-restore').addEventListener('click', function(){
+    hideError('restore-error');
+    var fileInput = $('restore-file');
+    var pass = $('restore-pass').value;
+    if(!fileInput.files || !fileInput.files[0]){ showError('restore-error', 'Selecione um arquivo de backup.'); return; }
+    if(!pass){ showError('restore-error', 'Digite a senha mestra usada no backup.'); return; }
+    var btn = $('btn-restore');
+    btn.disabled = true;
+    fileInput.files[0].text().then(function(text){
+      var data = JSON.parse(text);
+      if(!data || !data.salt || !data.iv || !data.cipher || !data.iterations) throw new Error('invalid');
+      var salt = b64ToBuf(data.salt);
+      return deriveKey(pass, salt, data.iterations).then(function(key){
+        return decryptJSON(key, data.iv, data.cipher).then(function(decrypted){
+          vault = decrypted;
+          if(!vault.settings) vault.settings = { autoLock: DEFAULT_SETTINGS.autoLock, clipboardClear: DEFAULT_SETTINGS.clipboardClear };
+          if(!vault.entries) vault.entries = [];
+          dbRecord = { id: RECORD_ID, salt: data.salt, iterations: data.iterations, iv: data.iv, cipher: data.cipher, updatedAt: Date.now() };
+          return idbPutRecord(db, dbRecord).then(function(){ return key; });
+        });
+      });
+    }).then(function(key){
+      sessionKey = key;
+      $('restore-pass').value = '';
+      resetEye('restore-pass');
+      resetActivity();
+      showScreen('main');
+      render();
+      showToast('Backup restaurado com sucesso!');
+    }).catch(function(err){
+      console.error(err);
+      showError('restore-error', 'Não foi possível restaurar: senha incorreta ou arquivo inválido/corrompido.');
+    }).finally(function(){
+      btn.disabled = false;
+    });
+  });
+
+  // ================= Eventos: desbloqueio =================
+  function doUnlock(){
+    hideError('unlock-error');
+    var pass = $('unlock-pass').value;
+    if(!pass) return;
+    var btn = $('btn-unlock');
+    btn.disabled = true;
+    var salt = b64ToBuf(dbRecord.salt);
+    deriveKey(pass, salt, dbRecord.iterations).then(function(key){
+      return decryptJSON(key, dbRecord.iv, dbRecord.cipher).then(function(decrypted){
+        vault = decrypted;
+        if(!vault.settings) vault.settings = { autoLock: DEFAULT_SETTINGS.autoLock, clipboardClear: DEFAULT_SETTINGS.clipboardClear };
+        if(!vault.entries) vault.entries = [];
+        sessionKey = key;
+        failedUnlockAttempts = 0;
+        $('unlock-pass').value = '';
+        resetEye('unlock-pass');
+        resetActivity();
+        showScreen('main');
+        render();
+      });
+    }).catch(function(){
+      failedUnlockAttempts++;
+      showError('unlock-error', 'Senha incorreta.');
+      var delay = Math.min(failedUnlockAttempts * 500, 5000);
+      return new Promise(function(r){ setTimeout(r, delay); });
+    }).finally(function(){
+      btn.disabled = false;
+    });
+  }
+  $('btn-unlock').addEventListener('click', doUnlock);
+  $('unlock-pass').addEventListener('keydown', function(e){ if(e.key === 'Enter') doUnlock(); });
+
+  $('btn-goto-restore-2').addEventListener('click', function(){
+    genericConfirm('Restaurar um backup vai substituir todos os dados salvos neste dispositivo pelo conteúdo do arquivo. Deseja continuar?').then(function(ok){
+      if(ok) showScreen('restore');
+    });
+  });
+
+  // ================= Eventos: tela principal =================
+  $('btn-lock').addEventListener('click', lock);
+  $('search').addEventListener('input', render);
+  $('btn-add').addEventListener('click', function(){ openEntryModal(null); });
+
+  // ================= Modal: entrada (adicionar/editar) =================
+  function openEntryModal(id){
+    editingEntryId = id || null;
+    var entry = id ? vault.entries.find(function(e){ return e.id === id; }) : null;
+    $('entry-modal-title').textContent = entry ? 'Editar senha' : 'Nova senha';
+    $('f-title').value = entry ? (entry.title || '') : '';
+    $('f-category').value = entry ? (entry.category || '') : '';
+    $('f-username').value = entry ? (entry.username || '') : '';
+    $('f-password').value = entry ? (entry.password || '') : '';
+    $('f-url').value = entry ? (entry.url || '') : '';
+    $('f-notes').value = entry ? (entry.notes || '') : '';
+    resetEye('f-password');
+    $('btn-delete-entry').hidden = !entry;
+    updateStrengthMeterFor($('f-password').value, 'entry-strength');
+    updateCategoryDatalist();
+    $('modal-entry').hidden = false;
+    setTimeout(function(){ $('f-title').focus(); }, 50);
+  }
+  function closeEntryModal(){
+    $('modal-entry').hidden = true;
+    editingEntryId = null;
+  }
+  $('entry-close').addEventListener('click', closeEntryModal);
+  $('f-password').addEventListener('input', function(e){ updateStrengthMeterFor(e.target.value, 'entry-strength'); });
+
+  $('btn-generate').addEventListener('click', function(){
+    var pwd = generatePassword({ length: 18, upper: true, lower: true, digits: true, symbols: true });
+    $('f-password').value = pwd;
+    $('f-password').type = 'text';
+    var eyeBtn = document.querySelector('.eye-btn[data-target="f-password"]');
+    if(eyeBtn) eyeBtn.innerHTML = ICONS.eyeoff;
+    updateStrengthMeterFor(pwd, 'entry-strength');
+  });
+
+  $('btn-save-entry').addEventListener('click', function(){
+    var title = $('f-title').value.trim();
+    var username = $('f-username').value.trim();
+    var password = $('f-password').value;
+    var url = $('f-url').value.trim();
+    var notes = $('f-notes').value.trim();
+    var category = $('f-category').value.trim();
+    if(!title){ showToast('Dê um nome para essa senha (ex: nome do site).'); $('f-title').focus(); return; }
+    var now = Date.now();
+    if(editingEntryId){
+      var entry = vault.entries.find(function(e){ return e.id === editingEntryId; });
+      if(entry){
+        entry.title = title; entry.username = username; entry.password = password;
+        entry.url = url; entry.notes = notes; entry.category = category; entry.updatedAt = now;
+      }
+    } else {
+      vault.entries.push({ id: uid(), title: title, username: username, password: password, url: url, notes: notes, category: category, createdAt: now, updatedAt: now });
+    }
+    saveVault().then(function(){
+      closeEntryModal();
+      render();
+      showToast('Senha salva.');
+    });
+  });
+
+  $('btn-delete-entry').addEventListener('click', function(){
+    if(!editingEntryId) return;
+    genericConfirm('Excluir esta senha permanentemente?').then(function(ok){
+      if(!ok) return;
+      vault.entries = vault.entries.filter(function(e){ return e.id !== editingEntryId; });
+      saveVault().then(function(){
+        closeEntryModal();
+        render();
+        showToast('Senha excluída.');
+      });
+    });
+  });
+
+  // ================= Modal: configurações =================
+  $('btn-settings').addEventListener('click', function(){
+    $('setting-autolock').value = String(vault.settings.autoLock);
+    $('setting-clipboard').value = String(vault.settings.clipboardClear);
+    $('modal-settings').hidden = false;
+  });
+  $('settings-close').addEventListener('click', function(){ $('modal-settings').hidden = true; });
+
+  $('setting-autolock').addEventListener('change', function(e){
+    vault.settings.autoLock = e.target.value === 'never' ? 'never' : Number(e.target.value);
+    saveVault();
+  });
+  $('setting-clipboard').addEventListener('change', function(e){
+    vault.settings.clipboardClear = e.target.value === 'never' ? 'never' : Number(e.target.value);
+    saveVault();
+  });
+
+  // ================= Exportar =================
+  $('btn-export').addEventListener('click', function(){
+    var payload = { app: 'cofre-senhas', version: 1, exportedAt: new Date().toISOString(), salt: dbRecord.salt, iterations: dbRecord.iterations, iv: dbRecord.iv, cipher: dbRecord.cipher };
+    var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var dateStr = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = 'cofre-senhas-backup-' + dateStr + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    showToast('Backup exportado. Guarde este arquivo em um lugar seguro.');
+  });
+
+  // ================= Importar (com cofre já aberto) =================
+  $('btn-import').addEventListener('click', function(){ $('import-file').click(); });
+  $('import-file').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+    file.text().then(function(text){
+      var data = JSON.parse(text);
+      if(!data || !data.salt || !data.iv || !data.cipher || !data.iterations) throw new Error('invalid');
+      pendingImport = { raw: data };
+      $('modal-settings').hidden = true;
+      openImportPasswordModal();
+    }).catch(function(){
+      showToast('Arquivo de backup inválido.');
+    });
+  });
+
+  function openImportPasswordModal(){
+    $('import-pass').value = '';
+    resetEye('import-pass');
+    hideError('import-error');
+    $('modal-import').hidden = false;
+    setTimeout(function(){ $('import-pass').focus(); }, 50);
+  }
+  $('import-modal-close').addEventListener('click', function(){ $('modal-import').hidden = true; pendingImport = null; });
+  $('btn-import-cancel').addEventListener('click', function(){ $('modal-import').hidden = true; pendingImport = null; $('import-pass').value = ''; hideError('import-error'); });
+
+  $('btn-import-continue').addEventListener('click', function(){
+    hideError('import-error');
+    var pass = $('import-pass').value;
+    if(!pass) return;
+    var data = pendingImport.raw;
+    var salt = b64ToBuf(data.salt);
+    deriveKey(pass, salt, data.iterations).then(function(key){
+      return decryptJSON(key, data.iv, data.cipher);
+    }).then(function(decrypted){
+      pendingImport.decrypted = decrypted;
+      $('modal-import').hidden = true;
+      $('import-pass').value = '';
+      $('import-count').textContent = String((decrypted.entries || []).length);
+      $('modal-import-mode').hidden = false;
+    }).catch(function(){
+      showError('import-error', 'Senha incorreta ou arquivo corrompido.');
+    });
+  });
+
+  $('btn-import-cancel2').addEventListener('click', function(){ $('modal-import-mode').hidden = true; pendingImport = null; });
+
+  function applyImport(mode){
+    var imported = pendingImport.decrypted;
+    var importedEntries = imported.entries || [];
+    if(mode === 'replace'){
+      vault.entries = importedEntries.map(function(e){ return Object.assign({}, e, { id: e.id || uid() }); });
+    } else {
+      var byId = {};
+      vault.entries.forEach(function(e){ byId[e.id] = e; });
+      importedEntries.forEach(function(e){
+        var id = e.id || uid();
+        var existing = byId[id];
+        if(!existing || (e.updatedAt || 0) > (existing.updatedAt || 0)){
+          byId[id] = Object.assign({}, e, { id: id });
+        }
+      });
+      vault.entries = Object.keys(byId).map(function(k){ return byId[k]; });
+    }
+    return saveVault().then(function(){
+      $('modal-import-mode').hidden = true;
+      pendingImport = null;
+      render();
+      showToast('Backup importado com sucesso.');
+    });
+  }
+  $('btn-import-merge').addEventListener('click', function(){ applyImport('merge'); });
+  $('btn-import-replace').addEventListener('click', function(){
+    genericConfirm('Isso apagará TODAS as senhas atuais e usará somente as do backup. Essa ação não pode ser desfeita. Continuar?').then(function(ok){
+      if(ok) applyImport('replace');
+    });
+  });
+
+  // ================= Alterar senha mestra =================
+  $('btn-change-master').addEventListener('click', function(){
+    $('modal-settings').hidden = true;
+    $('cp-current').value = ''; $('cp-new').value = ''; $('cp-confirm').value = '';
+    resetEye('cp-current'); resetEye('cp-new'); resetEye('cp-confirm');
+    hideError('cp-error');
+    updateStrengthMeterFor('', 'cp-strength');
+    $('modal-change-pass').hidden = false;
+  });
+  $('change-pass-close').addEventListener('click', function(){ $('modal-change-pass').hidden = true; });
+  $('btn-cp-cancel').addEventListener('click', function(){ $('modal-change-pass').hidden = true; });
+  $('cp-new').addEventListener('input', function(e){ updateStrengthMeterFor(e.target.value, 'cp-strength'); });
+
+  $('btn-cp-save').addEventListener('click', function(){
+    hideError('cp-error');
+    var current = $('cp-current').value;
+    var next = $('cp-new').value;
+    var confirmVal = $('cp-confirm').value;
+    if(next.length < 8){ showError('cp-error', 'A nova senha deve ter pelo menos 8 caracteres.'); return; }
+    if(next !== confirmVal){ showError('cp-error', 'As senhas não coincidem.'); return; }
+    var btn = $('btn-cp-save');
+    btn.disabled = true;
+    var salt = b64ToBuf(dbRecord.salt);
+    deriveKey(current, salt, dbRecord.iterations).then(function(key){
+      return decryptJSON(key, dbRecord.iv, dbRecord.cipher);
+    }).then(function(){
+      var newSalt = crypto.getRandomValues(new Uint8Array(16));
+      return deriveKey(next, newSalt, ITERATIONS).then(function(newKey){
+        return encryptJSON(newKey, vault).then(function(res){
+          dbRecord = { id: RECORD_ID, salt: bufToB64(newSalt), iterations: ITERATIONS, iv: res.iv, cipher: res.cipher, updatedAt: Date.now() };
+          return idbPutRecord(db, dbRecord).then(function(){ return newKey; });
+        });
+      });
+    }).then(function(newKey){
+      sessionKey = newKey;
+      $('modal-change-pass').hidden = true;
+      showToast('Senha mestra alterada com sucesso.');
+    }).catch(function(){
+      showError('cp-error', 'Senha atual incorreta.');
+    }).finally(function(){
+      btn.disabled = false;
+    });
+  });
+
+  // ================= Apagar tudo =================
+  $('btn-wipe').addEventListener('click', function(){
+    genericConfirm('Isso vai apagar PERMANENTEMENTE todas as senhas salvas neste dispositivo. Recomendamos exportar um backup antes. Deseja continuar?').then(function(ok1){
+      if(!ok1) return;
+      genericConfirm('Tem certeza absoluta? Essa ação não pode ser desfeita.').then(function(ok2){
+        if(!ok2) return;
+        idbDeleteRecord(db).then(function(){
+          sessionKey = null; vault = null; dbRecord = null;
+          $('modal-settings').hidden = true;
+          showScreen('setup');
+          showToast('Todos os dados foram apagados.');
+        });
+      });
+    });
+  });
+
+  // ================= Confirmação genérica =================
+  $('confirm-ok').addEventListener('click', function(){
+    $('modal-confirm').hidden = true;
+    if(confirmResolve) confirmResolve(true);
+    confirmResolve = null;
+  });
+  $('confirm-cancel').addEventListener('click', function(){
+    $('modal-confirm').hidden = true;
+    if(confirmResolve) confirmResolve(false);
+    confirmResolve = null;
+  });
+
+  // ================= Olho (mostrar/ocultar senha) =================
+  qsa('.eye-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var targetId = btn.dataset.target;
+      var input = $(targetId);
+      if(input.type === 'password'){
+        input.type = 'text';
+        btn.innerHTML = ICONS.eyeoff;
+      } else {
+        input.type = 'password';
+        btn.innerHTML = ICONS.eye;
+      }
+    });
+  });
+
+  // ================= Modais: fechar com backdrop / Esc =================
+  qsa('.modal-overlay').forEach(function(overlay){
+    overlay.addEventListener('click', function(e){
+      if(e.target === overlay){
+        overlay.hidden = true;
+        if(overlay.id === 'modal-confirm' && confirmResolve){ confirmResolve(false); confirmResolve = null; }
+      }
+    });
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      qsa('.modal-overlay').forEach(function(o){
+        if(!o.hidden){
+          o.hidden = true;
+          if(o.id === 'modal-confirm' && confirmResolve){ confirmResolve(false); confirmResolve = null; }
+        }
+      });
+    }
+  });
+
+  // ================= Start =================
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+</body>
+</html>
