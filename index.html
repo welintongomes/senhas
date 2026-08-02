@@ -150,7 +150,7 @@
   .empty-state .dial-wrap{opacity:.5;margin-bottom:16px;}
 
   .fab{
-    position:fixed;left:20px;bottom:calc(22px + env(safe-area-inset-bottom,0px));
+    position:fixed;left:20px;bottom: calc(67px + env(safe-area-inset-bottom,0px));
     width:56px;height:56px;border-radius:50%;background:var(--brass);color:#181410;
     border:none;font-size:28px;line-height:1;cursor:pointer;
     box-shadow:0 6px 20px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;
@@ -227,7 +227,7 @@
   }
   /* ---------- Chips de Categoria ---------- */
   .category-chips {
-    max-width: 680px; margin: 0 auto; padding: 0 18px 12px;
+    max-width: 680px; margin-left: 78px; margin-right: 23px; padding: 0 18px 18px;
     display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
   }
   .category-chips::-webkit-scrollbar { display: none; }
@@ -240,6 +240,16 @@
   .chip.active {
     background: var(--brass); color: #181410; border-color: var(--brass); font-weight: 600;
   }
+  #baxos{
+    position: fixed;
+    bottom: 50px;
+
+    width: calc(100% - 20px);
+    max-width: 700px;
+
+    left: 50%;
+    transform: translateX(-50%);
+}
 </style>
 </head>
 <body>
@@ -328,18 +338,23 @@
         <button id="btn-lock" class="icon-btn" title="Bloquear cofre" aria-label="Bloquear cofre"></button>
       </div>
     </header>
-    <div class="search-row">
-      <input id="search" type="search" placeholder="Buscar por site, usuário ou URL...">
-      <span id="entry-count" class="count-badge">0</span>
-    </div>
-    <div id="category-chips" class="category-chips"></div>
+    
+    
     <ul id="entry-list" class="entry-list"></ul>
     <div id="empty-state" class="empty-state" hidden>
       <div class="dial-wrap" id="dial-empty"></div>
       <h2>Seu cofre está vazio</h2>
       <p class="muted">Toque no botão "+" para guardar sua primeira senha.</p>
     </div>
-    <button id="btn-add" class="fab" title="Adicionar senha" aria-label="Adicionar senha">+</button>
+    <div id="baxos">
+      <button id="btn-add" class="fab" title="Adicionar senha" aria-label="Adicionar senha">+</button>
+      <div id="category-chips" class="category-chips"></div>
+    <div class="search-row">
+      <input id="search" type="search" placeholder="Buscar por site, usuário ou URL...">
+      <span id="entry-count" class="count-badge">0</span>
+    </div>
+    </div>
+    
   </div>
 
 </div>
